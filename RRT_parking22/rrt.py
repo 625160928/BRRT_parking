@@ -8,6 +8,8 @@ author: AtsushiSakai(@Atsushi_twi)
 
 import math
 import random
+from math import pi
+from math import sin, cos
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -53,7 +55,8 @@ class RRT:
                  max_iter=500,
                  play_area=None,
                  robot_radius=0.0,
-                 sim_env=None
+                 sim_env=None,
+                 grid=None
                  ):
         """
         Setting Parameter
@@ -82,9 +85,9 @@ class RRT:
         self.node_list = []
         self.robot_radius = robot_radius
         self.sim_env=sim_env
-        print(self.sim_env.world.grid_map)
+        self.grid=grid
 
-    def planning(self, animation=True):
+    def planning(self, animation=False):
         """
         rrt path planning
 
@@ -100,23 +103,27 @@ class RRT:
             new_node = self.steer(nearest_node, rnd_node, self.expand_dis)
 
             if self.check_if_outside_play_area(new_node, self.play_area) and \
-               self.check_collision(
-                   new_node, self.obstacle_list, self.robot_radius):
+               self.check_collision_map(
+                   new_node):
                 self.node_list.append(new_node)
 
             if animation and i % 5 == 0:
-                self.draw_graph(rnd_node)
+                print('draw1 ',rnd_node.x,rnd_node.y)
+                self.sim_env.world.point_plot((rnd_node.x,rnd_node.y))
+                self.sim_env.world.pause(0.00001)
 
             if self.calc_dist_to_goal(self.node_list[-1].x,
                                       self.node_list[-1].y) <= self.expand_dis:
                 final_node = self.steer(self.node_list[-1], self.end,
                                         self.expand_dis)
-                if self.check_collision(
-                        final_node, self.obstacle_list, self.robot_radius):
+                if self.check_collision_map(
+                        final_node):
                     return self.generate_final_course(len(self.node_list) - 1)
 
             if animation and i % 5:
-                self.draw_graph(rnd_node)
+                print('draw2 ',rnd_node.x,rnd_node.y)
+                self.sim_env.world.point_plot((rnd_node.x,rnd_node.y))
+                self.sim_env.world.pause(0.00001)
 
         return None  # cannot find path
 
@@ -174,7 +181,7 @@ class RRT:
             rnd = self.Node(self.end.x, self.end.y)
         return rnd
 
-    def draw_graph(self, rnd=None):
+    def draw_graph_ori(self, rnd=None):
         plt.clf()
         # for stopping simulation with the esc key.
         plt.gcf().canvas.mpl_connect(
@@ -207,6 +214,43 @@ class RRT:
         plt.grid(True)
         plt.pause(0.01)
 
+    # calculate the angular position of the car
+    def angular_pos(self, state):
+
+        if isinstance(state, np.ndarray):
+            x = state[0, 0]
+            y = state[1, 0]
+            phi = state[2, 0]
+        else:
+            x = state[0]
+            y = state[1]
+            phi = state[2]
+
+        length = self.sim_env.car.shape[0]
+        width = self.sim_env.car.shape[1]
+        wheelbase = self.sim_env.car.shape[2]
+
+        car_x0 = - width / 2
+        car_y0 = - (length-wheelbase)/2
+
+        car_x1 = car_x0
+        car_y1 = car_y0 + length
+
+        car_x2 = car_x0 + width
+        car_y2 = car_y0 + length
+
+        car_x3 = car_x0 + width
+        car_y3 = car_y0
+
+        car_point = np.array([ [car_x0, car_x1, car_x2, car_x3], [car_y0, car_y1, car_y2, car_y3] ])
+
+        r_phi = phi - pi/2
+        rotation_matrix = np.array([[cos(r_phi), -sin(r_phi)], [sin(r_phi), cos(r_phi)]])
+        transition_matrix = np.array([[x], [y]])
+        angular_position = rotation_matrix @ car_point + transition_matrix
+
+        return angular_position
+
     @staticmethod
     def plot_circle(x, y, size, color="-b"):  # pragma: no cover
         deg = list(range(0, 360, 5))
@@ -236,7 +280,7 @@ class RRT:
             return True  # inside - ok
 
     @staticmethod
-    def check_collision(node, obstacleList, robot_radius):
+    def check_collision_obstacleList(node, obstacleList, robot_radius):
 
         if node is None:
             return False
@@ -249,6 +293,19 @@ class RRT:
             if min(d_list) <= (size+robot_radius)**2:
                 return False  # collision
 
+        return True  # safe
+
+
+    def check_collision_map(self,node):
+        x=node.x
+        y=node.y
+        theta=0
+        if hasattr(node,'theta'):
+            theta=node.theta
+        rectangle = self.angular_pos([x,y,theta])
+        rect_collision = self.grid.check_collision_rectangle(rectangle)
+        if rect_collision :
+            return False
         return True  # safe
 
     @staticmethod

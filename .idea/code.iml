@@ -5,6 +5,8 @@
       <sourceFolder url="file://$MODULE_DIR$/ir_sim" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/RRT_parking22" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/hybrid_astar_main" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/hybrid_astar/hybrid_astar" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/hybrid_astar" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
