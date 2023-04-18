@@ -2,9 +2,9 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/PythonRobotics/PathPlanning" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ir_sim" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/ir_sim/ir_sim" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/RRT_parking22" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/hybrid_astar_main" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
