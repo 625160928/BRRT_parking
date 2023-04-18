@@ -22,6 +22,7 @@ class world:
 
         self.sub_plot_kwargs = kwargs.get('subplot', {})
         self.grid_map, self.obstacle_index, self.obstacle_positions = self.gen_grid_map(obstacle_map)
+        print('grid map ',self.grid_map)
 
     def step(self):
         self.count += 1
@@ -30,7 +31,7 @@ class world:
     def gen_grid_map(self, obstacle_map):
 
         abs_obstacle_map = world.file_check(obstacle_map)
-
+        print('abs_obstacle_map ',abs_obstacle_map)
         # px = int(self.width / self.xy_reso)
         # py = int(self.height / self.xy_reso)
         if abs_obstacle_map is not None:
