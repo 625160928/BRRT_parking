@@ -87,6 +87,8 @@ class RRT:
         self.sim_env=sim_env
         self.grid=grid
 
+        self._collision_check_times=0
+
     def planning(self, animation=False):
         """
         rrt path planning
@@ -304,12 +306,57 @@ class RRT:
             theta=node.yaw
         return self.check_collision_pose(x,y,theta)
 
+    #对一个点进行碰撞检测
     def check_collision_pose(self, x,y,theta):
+        self._collision_check_times=self._collision_check_times+1
         rectangle = self.angular_pos([x,y,theta])
         rect_collision = self.grid.check_collision_rectangle(rectangle)
         if rect_collision :
             return False
         return True  # safe
+
+
+    '''
+    #对一段路进行碰撞检测
+    都是使用self.check_collision_pose来进行节点检测，只是对每个节点都进行碰撞检测来实现路径碰撞检测
+    default:默认是顺序碰撞检测
+    dichotomy：使用二分法碰撞检测
+    '''
+    def check_collision_pose_list(self,px,py,pyaw=None,order="default"):
+        if pyaw==None:
+            pyaw=[]
+            for i in range(len(px)):
+                pyaw.append(0)
+
+        if order=="default":
+            return self.check_collision_pose_list_default(px,py,pyaw)
+
+        if order=="dichotomy":
+            end_ind=len(px)-1
+            if self.check_collision_pose(px[0], py[0], pyaw[0]) == False:
+                return False
+            if self.check_collision_pose(px[end_ind], py[end_ind], pyaw[end_ind]) == False:
+                return False
+            return self.check_collision_pose_list_dichotomy(px,py,pyaw,0,end_ind)
+
+    def check_collision_pose_list_default(self,px,py,pyaw):
+        for i in range(len(px)):
+            if self.check_collision_pose(px[i],py[i],pyaw[i])==False:
+                return False
+        return True
+
+    def check_collision_pose_list_dichotomy(self, px, py, pyaw,head,tail):
+        if head==tail or head+1==tail:
+            return True
+        mid=int((head+tail)/2)
+        if self.check_collision_pose(px[mid], py[mid], pyaw[mid]) == False:
+            return False
+        if self.check_collision_pose_list_dichotomy(px, py, pyaw, head, mid) == False:
+            return False
+        if self.check_collision_pose_list_dichotomy(px, py, pyaw, mid,tail) == False:
+            return False
+
+        return True
     @staticmethod
     def calc_distance_and_angle(from_node, to_node):
         dx = to_node.x - from_node.x
@@ -317,6 +364,9 @@ class RRT:
         d = math.hypot(dx, dy)
         theta = math.atan2(dy, dx)
         return d, theta
+
+    def get_collision_check_times(self):
+        return self._collision_check_times
 
 
 def main(gx=6.0, gy=10.0):

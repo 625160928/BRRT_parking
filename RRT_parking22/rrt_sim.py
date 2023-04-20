@@ -1,15 +1,22 @@
 import math
+import random
+import numpy as np
+import cProfile
+import time
 
 from hy_src.env_base import env_base
 from hy_src.hybrid_astar import hybrid_astar
 from hy_src.grid_graph import grid_graph
 from pathlib import Path
-import numpy as np
-import cProfile
 
 from rrt import  RRT
 from rrt_star import RRTStar
 from rrt_star_reeds_shepp import RRTStarReedsShepp
+
+random.seed(4834201)  # 4834201
+
+seed = random.randint(1, 10000000)
+#32724
 
 '''
 将rrt格式的路径转化为astar格式
@@ -46,8 +53,8 @@ def main(show_animation=True):
     cur_path = Path(__file__).parent
     world_path = str(cur_path / 'hy_astar_world.yaml')
     reeds_lookup_path = str(cur_path / 'reeds_lookup.npy')
-    # world_map = str(cur_path / 'map_image' / 'map2.png')
-    world_map = str(cur_path / 'map_image' / 'map_100_100.png')
+    world_map = str(cur_path / 'map_image' / 'map2.png')
+    # world_map = str(cur_path / 'map_image' / 'map_100_100.png')
 
     env0 = env_base(world_path, world_map)
     env0.initialization()
@@ -74,30 +81,38 @@ def main(show_animation=True):
         goal=end_position,
         obstacle_list=obstacleList,
         rand_area=search_area,
-        max_iter=500,
+        max_iter=5000,
         connect_circle_dist=50.0,
         robot_radius=collision_r,
         sim_env=env0,
-        grid=grid)
+        grid=grid,
+        # path_collision_check_mode="dichotomy"
+    )
 
 
     show_animation =False
 
 
+    start_time=time.time()
     path_list  = rrt_star_reeds_shepp.planning(animation=show_animation,search_until_max_iter=False)
 
+    end_time=time.time()
+    print("规划花费时间 ",(end_time-start_time)*1000,' s')
+    print('生成节点数量 ',len(rrt_star_reeds_shepp.node_list))
+    print("碰撞检测次数 ",rrt_star_reeds_shepp.get_collision_check_times())
 
 
-    #RRT path to reformate
-    path_list =  path_rrt_to_astar(path_list)
+    print('seed ', seed)
 
-    # for path_point in  path_list:
-    #
-    #     is_save=rrt_star_reeds_shepp.check_collision_pose(path_point[0][0],path_point[1][0],path_point[2][0])
-    #     print(path_point[0][0],path_point[1][0],path_point[2][0],path_point[3][0],is_save)
-
-    print('number of node ',len(rrt_star_reeds_shepp.node_list))
     if path_list:
+        # RRT path to reformate
+        path_list = path_rrt_to_astar(path_list)
+
+        # for path_point in  path_list:
+        #
+        #     is_save=rrt_star_reeds_shepp.check_collision_pose(path_point[0][0],path_point[1][0],path_point[2][0])
+        #     print(path_point[0][0],path_point[1][0],path_point[2][0],path_point[3][0],is_save)
+
         env0.world.path_plot(path_list, path_color='r', show_point=False)
         env0.render(0.1)
         for point in path_list:
@@ -108,6 +123,8 @@ def main(show_animation=True):
         env0.show()
     else:
         print("no route return")
+
+    print('seed ', seed)
 
 if __name__ == '__main__':
     main()

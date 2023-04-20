@@ -53,7 +53,8 @@ class RRTStarReedsShepp(RRTStar):
 
                  goal_sample_rate=20,
                  sim_env=None,
-                 grid=None
+                 grid=None,
+                 path_collision_check_mode='default'
                  ):
         """
         Setting Parameter
@@ -80,6 +81,9 @@ class RRTStarReedsShepp(RRTStar):
         self.goal_xy_th = 0.5
         self.sim_env=sim_env
         self.grid=grid
+        self.path_collision_check_mode=path_collision_check_mode
+
+        self._collision_check_times=0
 
 
     def planning(self, animation=True, search_until_max_iter=True):
@@ -186,6 +190,7 @@ class RRTStarReedsShepp(RRTStar):
         reeds_shepp_path_planning.plot_arrow(
             self.end.x, self.end.y, self.end.yaw)
 
+
     def steer(self, from_node, to_node):
 
         px, py, pyaw, mode, course_lengths = reeds_shepp_path_planning.reeds_shepp_path_planning(
@@ -193,9 +198,9 @@ class RRTStarReedsShepp(RRTStar):
             to_node.x, to_node.y, to_node.yaw, self.curvature)
         if not px:
             return None
-        for i in range(len(px)):
-            if self.check_collision_pose(px[i],py[i],pyaw[i])==False:
-                return None
+
+        if self.check_collision_pose_list(px, py, pyaw,order=self.path_collision_check_mode)==False:
+            return None
 
         new_node = copy.deepcopy(from_node)
         new_node.x = px[-1]
