@@ -19,6 +19,17 @@ from rrt_star import RRTStar
 
 show_animation = True
 
+def node_to_point(node):
+    return np.array([[node.x],[node.y],[node.yaw]])
+
+def node_path_to_path_list(node):
+    px=node.path_x
+    py=node.path_y
+    pyaw=node.path_yaw
+    path=[]
+    for i in range(len(px)):
+        path.append([[px[i]],[py[i]],[pyaw[i]]])
+    return np.array(path)
 
 class RRTStarReedsShepp(RRTStar):
     """
@@ -81,6 +92,7 @@ class RRTStarReedsShepp(RRTStar):
             new_node = self.steer(self.node_list[nearest_ind], rnd)
             if new_node==None:
                 print("None ",self.node_list[nearest_ind], rnd)
+                continue
             if self.check_collision_map(
                     new_node):
                 near_indexes = self.find_near_nodes(new_node)
@@ -90,9 +102,11 @@ class RRTStarReedsShepp(RRTStar):
                     self.rewire(new_node, near_indexes)
                     self.try_goal_path(new_node)
 
-            if animation and i % 5 == 0:
-                # self.plot_start_goal_arrow()
-                self.sim_env.world.point_plot((new_node.x, new_node.y))
+            if animation and new_node!=None: # and i % 5 == 0
+
+                path_list=node_path_to_path_list(new_node)
+                self.sim_env.world.path_plot(path_list,path_color='black')
+                self.sim_env.world.point_arrow_plot(node_to_point(new_node),length=1)
                 self.sim_env.world.pause(0.00001)
 
             if (not search_until_max_iter) and new_node:  # check reaching the goal
