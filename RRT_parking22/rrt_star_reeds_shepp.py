@@ -50,6 +50,8 @@ class RRTStarReedsShepp(RRTStar):
                  max_iter=200,
                  connect_circle_dist=50.0,
                  robot_radius=0.0,
+
+                 goal_sample_rate=20,
                  sim_env=None,
                  grid=None
                  ):
@@ -71,6 +73,7 @@ class RRTStarReedsShepp(RRTStar):
         self.obstacle_list = obstacle_list
         self.connect_circle_dist = connect_circle_dist
         self.robot_radius = robot_radius
+        self.goal_sample_rate = goal_sample_rate
 
         self.curvature = 1.0
         self.goal_yaw_th = np.deg2rad(1.0)
@@ -110,7 +113,7 @@ class RRTStarReedsShepp(RRTStar):
                     self.node_list.append(new_node)
 
 
-                self.try_goal_path(new_node)
+                # self.try_goal_path(new_node)
 
             if animation and new_node!=None: # and i % 5 == 0
 
@@ -207,11 +210,14 @@ class RRTStarReedsShepp(RRTStar):
 
     def get_random_node(self):
 
-        rnd = self.Node(random.uniform(self.min_rand, self.max_rand),
-                        random.uniform(self.min_rand, self.max_rand),
-                        random.uniform(-math.pi, math.pi)
-                        )
 
+        if random.randint(0, 100) > self.goal_sample_rate:
+            rnd = self.Node(random.uniform(self.min_rand, self.max_rand),
+                            random.uniform(self.min_rand, self.max_rand),
+                            random.uniform(-math.pi, math.pi)
+                            )
+        else:  # goal point sampling
+            rnd = self.Node(self.end.x, self.end.y,self.end.yaw)
         return rnd
 
     def search_best_goal_node(self):
