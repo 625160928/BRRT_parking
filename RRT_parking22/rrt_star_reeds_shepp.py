@@ -79,7 +79,8 @@ class RRTStarReedsShepp(RRTStar):
             rnd = self.get_random_node()
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
             new_node = self.steer(self.node_list[nearest_ind], rnd)
-
+            if new_node==None:
+                print("None ",self.node_list[nearest_ind], rnd)
             if self.check_collision_map(
                     new_node):
                 near_indexes = self.find_near_nodes(new_node)
@@ -90,8 +91,8 @@ class RRTStarReedsShepp(RRTStar):
                     self.try_goal_path(new_node)
 
             if animation and i % 5 == 0:
-                self.plot_start_goal_arrow()
-                self.sim_env.world.point_plot((rnd.x, rnd.y))
+                # self.plot_start_goal_arrow()
+                self.sim_env.world.point_plot((new_node.x, new_node.y))
                 self.sim_env.world.pause(0.00001)
 
             if (not search_until_max_iter) and new_node:  # check reaching the goal

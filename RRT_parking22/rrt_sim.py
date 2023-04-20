@@ -36,7 +36,7 @@ def main(show_animation=True):
     cur_path = Path(__file__).parent
     world_path = str(cur_path / 'hy_astar_world.yaml')
     reeds_lookup_path = str(cur_path / 'reeds_lookup.npy')
-    world_map = str(cur_path / 'map_image' / 'map1.png')
+    world_map = str(cur_path / 'map_image' / 'map4.png')
     # world_map = str(cur_path / 'map_image' / 'map_100_100.png')
 
     env0 = env_base(world_path, world_map)
@@ -71,7 +71,7 @@ def main(show_animation=True):
         grid=grid)
 
 
-    show_animation =False
+    # show_animation =False
 
 
     path_list  = rrt_star_reeds_shepp.planning(animation=show_animation)
