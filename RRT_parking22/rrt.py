@@ -300,8 +300,8 @@ class RRT:
         x=node.x
         y=node.y
         theta=0
-        if hasattr(node,'theta'):
-            theta=node.theta
+        if hasattr(node,'yaw'):
+            theta=node.yaw
         rectangle = self.angular_pos([x,y,theta])
         rect_collision = self.grid.check_collision_rectangle(rectangle)
         if rect_collision :

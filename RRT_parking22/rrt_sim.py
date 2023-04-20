@@ -9,6 +9,8 @@ import cProfile
 
 from rrt import  RRT
 from rrt_star import RRTStar
+from rrt_star_reeds_shepp import RRTStarReedsShepp
+
 '''
 将rrt格式的路径转化为astar格式
 '''
@@ -34,7 +36,8 @@ def main(show_animation=True):
     cur_path = Path(__file__).parent
     world_path = str(cur_path / 'hy_astar_world.yaml')
     reeds_lookup_path = str(cur_path / 'reeds_lookup.npy')
-    world_map = str(cur_path / 'map_image' / 'map_100_100_4.png')
+    world_map = str(cur_path / 'map_image' / 'map1.png')
+    # world_map = str(cur_path / 'map_image' / 'map_100_100.png')
 
     env0 = env_base(world_path, world_map)
     env0.initialization()
@@ -42,8 +45,6 @@ def main(show_animation=True):
     grid = grid_graph(env0.map_matrix, xy_reso=env0.xy_reso, yaw_reso=env0.yaw_reso)
     path_list=[]
 
-
-    # show_animation =False
     """
     hybrid astar
     """
@@ -88,18 +89,41 @@ def main(show_animation=True):
     RRT*
     """
     # Set Initial parameters
-    rrt_star = RRTStar(
+    # rrt_star = RRTStar(
+    #     start=start_position,
+    #     goal=end_position,
+    #     rand_area=search_area,
+    #     obstacle_list=obstacleList,
+    #     max_iter=5000,
+    #     expand_dis=1,
+    #     robot_radius=collision_r,
+    #     sim_env=env0,
+    #     grid=grid)
+    # path_list = rrt_star.planning(animation=show_animation)
+
+    """
+    RRT*-reeds_shepp
+    """
+    rrt_star_reeds_shepp = RRTStarReedsShepp(
         start=start_position,
         goal=end_position,
-        rand_area=search_area,
         obstacle_list=obstacleList,
+        rand_area=search_area,
         max_iter=5000,
-        expand_dis=1,
+        connect_circle_dist=50.0,
         robot_radius=collision_r,
         sim_env=env0,
         grid=grid)
-    path_list = rrt_star.planning(animation=show_animation)
 
+
+    show_animation =False
+
+
+    path_list  = rrt_star_reeds_shepp.planning(animation=show_animation)
+
+
+
+    #RRT path to reformate
     path_list =  path_rrt_to_astar(path_list)
 
 

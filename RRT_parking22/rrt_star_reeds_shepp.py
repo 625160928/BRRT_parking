@@ -38,7 +38,9 @@ class RRTStarReedsShepp(RRTStar):
     def __init__(self, start, goal, obstacle_list, rand_area,
                  max_iter=200,
                  connect_circle_dist=50.0,
-                 robot_radius=0.0
+                 robot_radius=0.0,
+                 sim_env=None,
+                 grid=None
                  ):
         """
         Setting Parameter
@@ -62,7 +64,8 @@ class RRTStarReedsShepp(RRTStar):
         self.curvature = 1.0
         self.goal_yaw_th = np.deg2rad(1.0)
         self.goal_xy_th = 0.5
-
+        self.sim_env=sim_env
+        self.grid=grid
     def planning(self, animation=True, search_until_max_iter=True):
         """
         planning
@@ -77,8 +80,8 @@ class RRTStarReedsShepp(RRTStar):
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
             new_node = self.steer(self.node_list[nearest_ind], rnd)
 
-            if self.check_collision(
-                    new_node, self.obstacle_list, self.robot_radius):
+            if self.check_collision_map(
+                    new_node):
                 near_indexes = self.find_near_nodes(new_node)
                 new_node = self.choose_parent(new_node, near_indexes)
                 if new_node:
@@ -88,7 +91,8 @@ class RRTStarReedsShepp(RRTStar):
 
             if animation and i % 5 == 0:
                 self.plot_start_goal_arrow()
-                self.draw_graph(rnd)
+                self.sim_env.world.point_plot((rnd.x, rnd.y))
+                self.sim_env.world.pause(0.00001)
 
             if (not search_until_max_iter) and new_node:  # check reaching the goal
                 last_index = self.search_best_goal_node()
@@ -113,8 +117,8 @@ class RRTStarReedsShepp(RRTStar):
         if new_node is None:
             return
 
-        if self.check_collision(
-                new_node, self.obstacle_list, self.robot_radius):
+        if self.check_collision_map(
+                new_node):
             self.node_list.append(new_node)
 
     def draw_graph(self, rnd=None):
