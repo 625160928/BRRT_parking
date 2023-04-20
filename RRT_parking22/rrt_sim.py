@@ -64,17 +64,17 @@ def main(show_animation=True):
         goal=end_position,
         obstacle_list=obstacleList,
         rand_area=search_area,
-        max_iter=5000,
+        max_iter=1,
         connect_circle_dist=50.0,
         robot_radius=collision_r,
         sim_env=env0,
         grid=grid)
 
 
-    # show_animation =False
+    show_animation =False
 
 
-    path_list  = rrt_star_reeds_shepp.planning(animation=show_animation)
+    path_list  = rrt_star_reeds_shepp.planning(animation=show_animation,search_until_max_iter=False)
 
 
 
@@ -83,7 +83,7 @@ def main(show_animation=True):
 
 
     for path_point in  path_list:
-        print(path_point)
+        print(path_point[0][0],path_point[1][0],path_point[2][0],path_point[3][0])
 
     env0.world.path_plot(path_list, path_color='r', show_point=False)
     env0.render(0.1)
@@ -91,7 +91,7 @@ def main(show_animation=True):
         # env0.world.com_cla()
         env0.car.update_state(point)
         env0.world.path_plot(path_list, path_color='r', show_point=False)
-        env0.render(0.1)
+        env0.render(0.001)
     env0.show()
 
 if __name__ == '__main__':

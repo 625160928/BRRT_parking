@@ -88,6 +88,9 @@ class RRTStarReedsShepp(RRTStar):
         for i in range(self.max_iter):
             print("Iter:", i, ", number of nodes:", len(self.node_list))
             rnd = self.get_random_node()
+            if i==100:
+                rnd=copy.deepcopy(self.end)
+
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
             new_node = self.steer(self.node_list[nearest_ind], rnd)
             if new_node==None:
@@ -96,11 +99,18 @@ class RRTStarReedsShepp(RRTStar):
             if self.check_collision_map(
                     new_node):
                 near_indexes = self.find_near_nodes(new_node)
-                new_node = self.choose_parent(new_node, near_indexes)
-                if new_node:
+
+                node_with_updated_parent = self.choose_parent(new_node, near_indexes)
+
+                if node_with_updated_parent:
+                    self.rewire(node_with_updated_parent, near_indexes)
+                    self.node_list.append(node_with_updated_parent)
+                    new_node=node_with_updated_parent
+                else:
                     self.node_list.append(new_node)
-                    self.rewire(new_node, near_indexes)
-                    self.try_goal_path(new_node)
+
+
+                self.try_goal_path(new_node)
 
             if animation and new_node!=None: # and i % 5 == 0
 
