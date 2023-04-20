@@ -80,12 +80,22 @@ class RRTStarReedsShepp(RRTStar):
         self.goal_xy_th = 0.5
         self.sim_env=sim_env
         self.grid=grid
+
+
     def planning(self, animation=True, search_until_max_iter=True):
         """
         planning
 
         animation: flag for animation on or off
         """
+
+        if self.check_collision_node(self.start) == False:
+            print('start point collision')
+            return None
+
+        if self.check_collision_node(self.end) == False:
+            print('end point collision')
+            return None
 
         self.node_list = [self.start]
         for i in range(self.max_iter):
@@ -97,9 +107,9 @@ class RRTStarReedsShepp(RRTStar):
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
             new_node = self.steer(self.node_list[nearest_ind], rnd)
             if new_node==None:
-                print("None ",self.node_list[nearest_ind], rnd)
+                # print("无法与附近的点相连 ",self.node_list[nearest_ind], rnd)
                 continue
-            if self.check_collision_map(
+            if self.check_collision_node(
                     new_node):
                 near_indexes = self.find_near_nodes(new_node)
 
@@ -145,7 +155,7 @@ class RRTStarReedsShepp(RRTStar):
         if new_node is None:
             return
 
-        if self.check_collision_map(
+        if self.check_collision_node(
                 new_node):
             self.node_list.append(new_node)
 
@@ -181,9 +191,11 @@ class RRTStarReedsShepp(RRTStar):
         px, py, pyaw, mode, course_lengths = reeds_shepp_path_planning.reeds_shepp_path_planning(
             from_node.x, from_node.y, from_node.yaw,
             to_node.x, to_node.y, to_node.yaw, self.curvature)
-
         if not px:
             return None
+        for i in range(len(px)):
+            if self.check_collision_pose(px[i],py[i],pyaw[i])==False:
+                return None
 
         new_node = copy.deepcopy(from_node)
         new_node.x = px[-1]
@@ -226,7 +238,7 @@ class RRTStarReedsShepp(RRTStar):
         for (i, node) in enumerate(self.node_list):
             if self.calc_dist_to_goal(node.x, node.y) <= self.goal_xy_th:
                 goal_indexes.append(i)
-        print("goal_indexes:", len(goal_indexes))
+        # print("goal_indexes:", len(goal_indexes))
 
         # angle check
         final_goal_indexes = []
@@ -234,13 +246,13 @@ class RRTStarReedsShepp(RRTStar):
             if abs(self.node_list[i].yaw - self.end.yaw) <= self.goal_yaw_th:
                 final_goal_indexes.append(i)
 
-        print("final_goal_indexes:", len(final_goal_indexes))
+        # print("final_goal_indexes:", len(final_goal_indexes))
 
         if not final_goal_indexes:
             return None
 
         min_cost = min([self.node_list[i].cost for i in final_goal_indexes])
-        print("min_cost:", min_cost)
+        # print("min_cost:", min_cost)
         for i in final_goal_indexes:
             if self.node_list[i].cost == min_cost:
                 return i

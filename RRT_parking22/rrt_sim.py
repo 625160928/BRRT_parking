@@ -31,13 +31,23 @@ def path_rrt_to_astar(path_list):
 
     return path
 
+'''
+碰撞检测
+'''
+def collision_check_point(rrt,x,y,theta):
+    rectangle = rrt.angular_pos([x, y, theta])
+    rect_collision = rrt.grid.check_collision_rectangle(rectangle)
+    if rect_collision:
+        return False
+    return True  # safe
+
 def main(show_animation=True):
 
     cur_path = Path(__file__).parent
     world_path = str(cur_path / 'hy_astar_world.yaml')
     reeds_lookup_path = str(cur_path / 'reeds_lookup.npy')
-    world_map = str(cur_path / 'map_image' / 'map2.png')
-    # world_map = str(cur_path / 'map_image' / 'map_100_100.png')
+    # world_map = str(cur_path / 'map_image' / 'map2.png')
+    world_map = str(cur_path / 'map_image' / 'map_100_100.png')
 
     env0 = env_base(world_path, world_map)
     env0.initialization()
@@ -81,18 +91,23 @@ def main(show_animation=True):
     #RRT path to reformate
     path_list =  path_rrt_to_astar(path_list)
 
+    # for path_point in  path_list:
+    #
+    #     is_save=rrt_star_reeds_shepp.check_collision_pose(path_point[0][0],path_point[1][0],path_point[2][0])
+    #     print(path_point[0][0],path_point[1][0],path_point[2][0],path_point[3][0],is_save)
 
-    for path_point in  path_list:
-        print(path_point[0][0],path_point[1][0],path_point[2][0],path_point[3][0])
-
-    env0.world.path_plot(path_list, path_color='r', show_point=False)
-    env0.render(0.1)
-    for point in path_list:
-        # env0.world.com_cla()
-        env0.car.update_state(point)
+    print('number of node ',len(rrt_star_reeds_shepp.node_list))
+    if path_list:
         env0.world.path_plot(path_list, path_color='r', show_point=False)
-        env0.render(0.001)
-    env0.show()
+        env0.render(0.1)
+        for point in path_list:
+            # env0.world.com_cla()
+            env0.car.update_state(point)
+            env0.world.path_plot(path_list, path_color='r', show_point=False)
+            env0.render(0.001)
+        env0.show()
+    else:
+        print("no route return")
 
 if __name__ == '__main__':
     main()

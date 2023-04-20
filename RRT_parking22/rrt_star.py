@@ -78,7 +78,7 @@ class RRTStar(RRT):
                 math.hypot(new_node.x-near_node.x,
                            new_node.y-near_node.y)
 
-            if self.check_collision_map(
+            if self.check_collision_node(
                     new_node):
                 near_inds = self.find_near_nodes(new_node)
                 node_with_updated_parent = self.choose_parent(
@@ -132,7 +132,7 @@ class RRTStar(RRT):
         for i in near_inds:
             near_node = self.node_list[i]
             t_node = self.steer(near_node, new_node)
-            if t_node and self.check_collision_map(
+            if t_node and self.check_collision_node(
                     t_node):
                 costs.append(self.calc_new_cost(near_node, new_node))
             else:
@@ -161,7 +161,7 @@ class RRTStar(RRT):
         safe_goal_inds = []
         for goal_ind in goal_inds:
             t_node = self.steer(self.node_list[goal_ind], self.goal_node)
-            if self.check_collision_map(
+            if self.check_collision_node(
                     t_node):
                 safe_goal_inds.append(goal_ind)
 
@@ -225,7 +225,7 @@ class RRTStar(RRT):
                 continue
             edge_node.cost = self.calc_new_cost(new_node, near_node)
 
-            no_collision = self.check_collision_map(
+            no_collision = self.check_collision_node(
                 edge_node)
             improved_cost = near_node.cost > edge_node.cost
 

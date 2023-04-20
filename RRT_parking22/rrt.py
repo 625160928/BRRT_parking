@@ -103,7 +103,7 @@ class RRT:
             new_node = self.steer(nearest_node, rnd_node, self.expand_dis)
 
             if self.check_if_outside_play_area(new_node, self.play_area) and \
-               self.check_collision_map(
+               self.check_collision_node(
                    new_node):
                 self.node_list.append(new_node)
 
@@ -116,7 +116,7 @@ class RRT:
                                       self.node_list[-1].y) <= self.expand_dis:
                 final_node = self.steer(self.node_list[-1], self.end,
                                         self.expand_dis)
-                if self.check_collision_map(
+                if self.check_collision_node(
                         final_node):
                     return self.generate_final_course(len(self.node_list) - 1)
 
@@ -296,18 +296,20 @@ class RRT:
         return True  # safe
 
 
-    def check_collision_map(self,node):
+    def check_collision_node(self, node):
         x=node.x
         y=node.y
         theta=0
         if hasattr(node,'yaw'):
             theta=node.yaw
+        return self.check_collision_pose(x,y,theta)
+
+    def check_collision_pose(self, x,y,theta):
         rectangle = self.angular_pos([x,y,theta])
         rect_collision = self.grid.check_collision_rectangle(rectangle)
         if rect_collision :
             return False
         return True  # safe
-
     @staticmethod
     def calc_distance_and_angle(from_node, to_node):
         dx = to_node.x - from_node.x
