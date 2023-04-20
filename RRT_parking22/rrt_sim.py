@@ -8,7 +8,7 @@ import numpy as np
 import cProfile
 
 from rrt import  RRT
-
+from rrt_star import RRTStar
 '''
 将rrt格式的路径转化为astar格式
 '''
@@ -55,9 +55,8 @@ def main(show_animation=True):
     # # print(env0.width,env0.height)
     # path_list = hy_astar.hy_astar_search(env0.car.state, env0.car.goal, show_process=show_animation)
 
-
     """
-    RRT
+    param for RRT
     """
 
     obstacleList=[]
@@ -68,20 +67,39 @@ def main(show_animation=True):
     # search_area=[env0.width,env0.height]
     # print(start_position,end_position,collision_r)
 
-    rrt = RRT(
+    """
+    RRT
+    """
+    # rrt = RRT(
+    #     start=start_position,
+    #     goal=end_position,
+    #     rand_area=search_area,
+    #     obstacle_list=obstacleList,
+    #     # play_area=[0, 10, 0, 14]
+    #     max_iter=5000,
+    #     robot_radius=collision_r,
+    #     sim_env=env0,
+    #     grid=grid
+    #     )
+    #
+    # path_list = rrt.planning(animation=show_animation)
+
+    """
+    RRT*
+    """
+    # Set Initial parameters
+    rrt_star = RRTStar(
         start=start_position,
         goal=end_position,
         rand_area=search_area,
         obstacle_list=obstacleList,
-        # play_area=[0, 10, 0, 14]
         max_iter=5000,
+        expand_dis=1,
         robot_radius=collision_r,
         sim_env=env0,
-        grid=grid
-        )
+        grid=grid)
+    path_list = rrt_star.planning(animation=show_animation)
 
-    path_list = rrt.planning(animation=show_animation)
-    # print(path_list)
     path_list =  path_rrt_to_astar(path_list)
 
 
