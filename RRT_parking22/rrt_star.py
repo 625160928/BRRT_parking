@@ -108,6 +108,8 @@ class RRTStar(RRT):
 
         return None
 
+
+
     def choose_parent(self, new_node, near_inds):
         """
         Computes the cheapest point to new_node contained in the list
@@ -124,14 +126,19 @@ class RRTStar(RRT):
             ------
                 Node, a copy of new_node
         """
+
+
         if not near_inds:
-            return None
+            new_node = self.get_best_father(new_node)
+            return new_node
 
         # search nearest cost in near_inds
         costs = []
         for i in near_inds:
             near_node = self.node_list[i]
             t_node = self.steer(near_node, new_node)
+            # if t_node and self.check_collision(
+            #         t_node, self.obstacle_list, self.robot_radius):
             if t_node and self.check_collision_node(
                     t_node):
                 costs.append(self.calc_new_cost(near_node, new_node))
@@ -146,8 +153,32 @@ class RRTStar(RRT):
         min_ind = near_inds[costs.index(min_cost)]
         new_node = self.steer(self.node_list[min_ind], new_node)
         new_node.cost = min_cost
+        if new_node.parent==None:
+            return new_node
+
+        # print('be ',new_node.parent.x,new_node.parent.y)
+
+        new_node=self.get_best_father(new_node)
 
         return new_node
+
+    def get_best_father(self,new_node):
+        parent_node=new_node.parent.parent
+        while parent_node!=None:
+            edge_node=self.steer(parent_node, new_node)
+            if edge_node==None:
+                parent_node=None
+                break
+            pcost=self.calc_new_cost(parent_node, new_node)+parent_node.cost
+            if pcost<new_node.cost:
+                new_node=edge_node
+                edge_node.cost=pcost
+                parent_node =new_node.parent
+            else:
+                parent_node=None
+                break
+        return new_node
+
 
     def search_best_goal_node(self):
         dist_to_goal_list = [
@@ -196,9 +227,10 @@ class RRTStar(RRT):
         # expand_dist
         if hasattr(self, 'expand_dis'):
             r = min(r, self.expand_dis)
+        r=r**2
         dist_list = [(node.x - new_node.x)**2 + (node.y - new_node.y)**2
                      for node in self.node_list]
-        near_inds = [dist_list.index(i) for i in dist_list if i <= r**2]
+        near_inds = [dist_list.index(i) for i in dist_list if i <= r]
         return near_inds
 
     def rewire(self, new_node, near_inds):
@@ -220,23 +252,29 @@ class RRTStar(RRT):
         """
         for i in near_inds:
             near_node = self.node_list[i]
-            edge_node = self.steer(new_node, near_node)
-            if not edge_node:
-                continue
-            edge_node.cost = self.calc_new_cost(new_node, near_node)
+            while near_node!=None:
+                edge_node = self.steer(new_node, near_node)
+                if not edge_node:
+                    near_node=None
+                    continue
+                edge_node.cost = self.calc_new_cost(new_node, near_node)
 
-            no_collision = self.check_collision_node(
-                edge_node)
-            improved_cost = near_node.cost > edge_node.cost
+                no_collision = self.check_collision_node(
+                    edge_node)
+                improved_cost = near_node.cost > edge_node.cost
 
-            if no_collision and improved_cost:
-                near_node.x = edge_node.x
-                near_node.y = edge_node.y
-                near_node.cost = edge_node.cost
-                near_node.path_x = edge_node.path_x
-                near_node.path_y = edge_node.path_y
-                near_node.parent = edge_node.parent
-                self.propagate_cost_to_leaves(new_node)
+                if no_collision and improved_cost:
+                    parent_node=near_node.parent
+                    near_node.x = edge_node.x
+                    near_node.y = edge_node.y
+                    near_node.cost = edge_node.cost
+                    near_node.path_x = edge_node.path_x
+                    near_node.path_y = edge_node.path_y
+                    near_node.parent = edge_node.parent
+                    self.propagate_cost_to_leaves(new_node)
+                    near_node=parent_node
+                else:
+                    near_node=None
 
     def calc_new_cost(self, from_node, to_node):
         d, _ = self.calc_distance_and_angle(from_node, to_node)

@@ -357,6 +357,7 @@ class RRT:
             return False
 
         return True
+
     @staticmethod
     def calc_distance_and_angle(from_node, to_node):
         dx = to_node.x - from_node.x

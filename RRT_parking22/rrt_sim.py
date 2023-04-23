@@ -54,7 +54,7 @@ def main(show_animation=True):
     world_path = str(cur_path / 'hy_astar_world.yaml')
     reeds_lookup_path = str(cur_path / 'reeds_lookup.npy')
     world_map = str(cur_path / 'map_image' / 'map2.png')
-    # world_map = str(cur_path / 'map_image' / 'map_100_100.png')
+    # world_map = str(cur_path / 'map_image' / 'map_100_100_4.png')
 
     env0 = env_base(world_path, world_map)
     env0.initialization()
@@ -86,18 +86,22 @@ def main(show_animation=True):
         robot_radius=collision_r,
         sim_env=env0,
         grid=grid,
-        # path_collision_check_mode="dichotomy"
+        path_collision_check_mode="dichotomy"
     )
 
 
-    show_animation =False
+    # show_animation =False
 
 
     start_time=time.time()
     path_list  = rrt_star_reeds_shepp.planning(animation=show_animation,search_until_max_iter=False)
 
     end_time=time.time()
-    print("规划花费时间 ",(end_time-start_time)*1000,' s')
+    tt=(end_time-start_time)*1000
+    tms=(tt)%1000
+
+    ts=(tt-tms)/1000
+    print("规划花费时间 ",ts,' s ',tms,' ms')
     print('生成节点数量 ',len(rrt_star_reeds_shepp.node_list))
     print("碰撞检测次数 ",rrt_star_reeds_shepp.get_collision_check_times())
 

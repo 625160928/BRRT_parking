@@ -10,13 +10,14 @@ import math
 import sys
 import matplotlib.pyplot as plt
 import pathlib
+import random
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 
 from RRT.rrt import RRT
 
 show_animation = True
 
-
+random.seed(0)
 class RRTStar(RRT):
     """
     Class for RRT Star planning
@@ -65,6 +66,8 @@ class RRTStar(RRT):
 
         self.node_list = [self.start]
         for i in range(self.max_iter):
+            if i==14:
+                a=0
             print("Iter:", i, ", number of nodes:", len(self.node_list))
             rnd = self.get_random_node()
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
@@ -80,7 +83,11 @@ class RRTStar(RRT):
                 near_inds = self.find_near_nodes(new_node)
                 node_with_updated_parent = self.choose_parent(
                     new_node, near_inds)
+
+                # print('af ',node_with_updated_parent.parent.x, node_with_updated_parent.parent.y)
+
                 if node_with_updated_parent:
+                    print('rewire')
                     self.rewire(node_with_updated_parent, near_inds)
                     self.node_list.append(node_with_updated_parent)
                 else:
@@ -119,8 +126,11 @@ class RRTStar(RRT):
             ------
                 Node, a copy of new_node
         """
+
+
         if not near_inds:
-            return None
+            new_node = self.get_best_father(new_node)
+            return new_node
 
         # search nearest cost in near_inds
         costs = []
@@ -141,7 +151,30 @@ class RRTStar(RRT):
         min_ind = near_inds[costs.index(min_cost)]
         new_node = self.steer(self.node_list[min_ind], new_node)
         new_node.cost = min_cost
+        if new_node.parent==None:
+            return new_node
 
+        # print('be ',new_node.parent.x,new_node.parent.y)
+
+        new_node=self.get_best_father(new_node)
+
+        return new_node
+
+    def get_best_father(self,new_node):
+        parent_node=new_node.parent.parent
+        while parent_node!=None:
+            edge_node=self.steer(parent_node, new_node)
+            if edge_node==None:
+                parent_node=None
+                break
+            pcost=self.calc_new_cost(parent_node, new_node)+parent_node.cost
+            if pcost<new_node.cost:
+                new_node=edge_node
+                edge_node.cost=pcost
+                parent_node =new_node.parent
+            else:
+                parent_node=None
+                break
         return new_node
 
     def search_best_goal_node(self):
@@ -196,6 +229,7 @@ class RRTStar(RRT):
         near_inds = [dist_list.index(i) for i in dist_list if i <= r**2]
         return near_inds
 
+
     def rewire(self, new_node, near_inds):
         """
             For each node in near_inds, this will check if it is cheaper to
@@ -213,25 +247,40 @@ class RRTStar(RRT):
             Remark: parent is designated in choose_parent.
 
         """
+        print('now node is ',new_node.x,new_node.y)
         for i in near_inds:
             near_node = self.node_list[i]
-            edge_node = self.steer(new_node, near_node)
-            if not edge_node:
-                continue
-            edge_node.cost = self.calc_new_cost(new_node, near_node)
+            print('near node is ',near_node.x,new_node.y)
+            while near_node!=None:
+                edge_node = self.steer(new_node, near_node)
+                if not edge_node:
+                    near_node=None
+                    continue
+                edge_node.cost = self.calc_new_cost(new_node, near_node)
 
-            no_collision = self.check_collision(
-                edge_node, self.obstacle_list, self.robot_radius)
-            improved_cost = near_node.cost > edge_node.cost
+                no_collision = self.check_collision(
+                    edge_node, self.obstacle_list, self.robot_radius)
+                improved_cost = near_node.cost > edge_node.cost
 
-            if no_collision and improved_cost:
-                near_node.x = edge_node.x
-                near_node.y = edge_node.y
-                near_node.cost = edge_node.cost
-                near_node.path_x = edge_node.path_x
-                near_node.path_y = edge_node.path_y
-                near_node.parent = edge_node.parent
-                self.propagate_cost_to_leaves(new_node)
+                if no_collision and improved_cost:
+                    parent_node=near_node.parent
+                    print(new_node.x,new_node.y,'---',near_node.x,near_node.y,'----',edge_node.x,edge_node.y)
+                    near_node.x = edge_node.x
+                    near_node.y = edge_node.y
+                    near_node.cost = edge_node.cost
+                    near_node.path_x = edge_node.path_x
+                    near_node.path_y = edge_node.path_y
+                    near_node.parent = edge_node.parent
+                    # near_node.x = edge_node.x
+                    # near_node.y = edge_node.y
+                    # near_node.cost = edge_node.cost
+                    # near_node.path_x = edge_node.path_x
+                    # near_node.path_y = edge_node.path_y
+                    # near_node.parent = edge_node.parent
+                    self.propagate_cost_to_leaves(new_node)
+                    near_node=parent_node
+                else:
+                    near_node=None
 
     def calc_new_cost(self, from_node, to_node):
         d, _ = self.calc_distance_and_angle(from_node, to_node)
