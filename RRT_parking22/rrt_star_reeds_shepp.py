@@ -84,7 +84,7 @@ class RRTStarReedsShepp(RRTStar):
         self.path_collision_check_mode=path_collision_check_mode
 
         self._collision_check_times=0
-
+        self._safe_collision_check_times=0
 
     def planning(self, animation=True, search_until_max_iter=True):
         """

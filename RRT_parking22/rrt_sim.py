@@ -86,9 +86,26 @@ def main(show_animation=True):
         robot_radius=collision_r,
         sim_env=env0,
         grid=grid,
-        path_collision_check_mode="dichotomy"
+        # path_collision_check_mode="dichotomy"
+        path_collision_check_mode="hierarchical"
     )
 
+    '''
+    default 
+    规划花费时间  5.0  s  265.58923721313477  ms
+    生成节点数量  22
+    碰撞检测次数  19600 16315  发现碰撞次数  3285
+    
+    dichotomy
+    规划花费时间  4.0  s  562.075138092041  ms
+    生成节点数量  22
+    碰撞检测次数  17649 16315  发现碰撞次数  1334
+    
+    hierarchical
+    规划花费时间  4.0  s  516.4706707000732  ms
+    生成节点数量  22
+    碰撞检测次数  16816 16315  发现碰撞次数  501
+    '''
 
     # show_animation =False
 
@@ -99,11 +116,11 @@ def main(show_animation=True):
     end_time=time.time()
     tt=(end_time-start_time)*1000
     tms=(tt)%1000
-
     ts=(tt-tms)/1000
+    cc,sc=rrt_star_reeds_shepp.get_collision_check_times()
     print("规划花费时间 ",ts,' s ',tms,' ms')
     print('生成节点数量 ',len(rrt_star_reeds_shepp.node_list))
-    print("碰撞检测次数 ",rrt_star_reeds_shepp.get_collision_check_times())
+    print("碰撞检测次数 ",cc,sc, ' 发现碰撞次数 ' ,cc-sc)
 
 
     print('seed ', seed)
