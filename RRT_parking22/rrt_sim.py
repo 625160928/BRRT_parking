@@ -12,10 +12,15 @@ from pathlib import Path
 from rrt import  RRT
 from rrt_star import RRTStar
 from rrt_star_reeds_shepp import RRTStarReedsShepp
+from brrt_star_reeds_shepp import BRRTStarReedsShepp
 
-random.seed(4834201)  # 4834201
+# random.seed(4834201)  # map4
 
-seed = random.randint(1, 10000000)
+seed= 3847315 # parking
+# seed = random.randint(1, 10000000)
+
+
+random.seed(seed)
 #32724
 
 '''
@@ -51,9 +56,11 @@ def collision_check_point(rrt,x,y,theta):
 def main(show_animation=True):
 
     cur_path = Path(__file__).parent
-    world_path = str(cur_path / 'hy_astar_world.yaml')
+    world_path = str(cur_path / 'parking.yaml')
+    # world_path = str(cur_path / 'hy_astar_world.yaml')
     reeds_lookup_path = str(cur_path / 'reeds_lookup.npy')
-    world_map = str(cur_path / 'map_image' / 'map2.png')
+    world_map = str(cur_path / 'map_image' / 'map_parking.png')
+    # world_map = str(cur_path / 'map_image' / 'map2.png')
     # world_map = str(cur_path / 'map_image' / 'map_100_100_4.png')
 
     env0 = env_base(world_path, world_map)
@@ -76,7 +83,7 @@ def main(show_animation=True):
     """
     RRT*-reeds_shepp
     """
-    rrt_star_reeds_shepp = RRTStarReedsShepp(
+    rrt_star_reeds_shepp = BRRTStarReedsShepp(
         start=start_position,
         goal=end_position,
         obstacle_list=obstacleList,
@@ -89,22 +96,27 @@ def main(show_animation=True):
         # path_collision_check_mode="dichotomy"
         path_collision_check_mode="hierarchical"
     )
+    rrt_star_reeds_shepp.curvature=10
 
     '''
     default 
     规划花费时间  5.0  s  265.58923721313477  ms
     生成节点数量  22
     碰撞检测次数  19600 16315  发现碰撞次数  3285
+    路径碰撞检测次数  292 214  路径发生碰撞次数  78  平均碰撞检测次数  42.11538461538461
+
     
     dichotomy
     规划花费时间  4.0  s  562.075138092041  ms
     生成节点数量  22
     碰撞检测次数  17649 16315  发现碰撞次数  1334
-    
+    路径碰撞检测次数  292 214  路径发生碰撞次数  78  平均碰撞检测次数  17.102564102564102
+
     hierarchical
     规划花费时间  4.0  s  516.4706707000732  ms
     生成节点数量  22
     碰撞检测次数  16816 16315  发现碰撞次数  501
+    路径碰撞检测次数  292 214  发现碰撞次数  78  平均碰撞检测次数  6.423076923076923
     '''
 
     # show_animation =False
@@ -117,10 +129,18 @@ def main(show_animation=True):
     tt=(end_time-start_time)*1000
     tms=(tt)%1000
     ts=(tt-tms)/1000
-    cc,sc=rrt_star_reeds_shepp.get_collision_check_times()
+    point_collision_times,safe_point_collision_times,route_collision_check_times,safe_route_collision_check_times\
+        =rrt_star_reeds_shepp.get_collision_check_times()
+
     print("规划花费时间 ",ts,' s ',tms,' ms')
-    print('生成节点数量 ',len(rrt_star_reeds_shepp.node_list))
-    print("碰撞检测次数 ",cc,sc, ' 发现碰撞次数 ' ,cc-sc)
+    print('生成节点数量 ', len(rrt_star_reeds_shepp.init_node_list))
+    print("碰撞检测次数 ",point_collision_times,safe_point_collision_times, ' 发现碰撞次数 ' ,point_collision_times-safe_point_collision_times)
+    tmp=route_collision_check_times-safe_route_collision_check_times
+    if tmp==0:
+        tmp=1
+        print('0-> 1')
+    print("路径碰撞检测次数 ",route_collision_check_times,safe_route_collision_check_times, ' 路径发生碰撞次数 ' ,
+          route_collision_check_times-safe_route_collision_check_times,' 平均碰撞检测次数 ',(point_collision_times-safe_point_collision_times)/(tmp))
 
 
     print('seed ', seed)

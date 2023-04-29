@@ -85,6 +85,8 @@ class RRTStarReedsShepp(RRTStar):
 
         self._collision_check_times=0
         self._safe_collision_check_times=0
+        self._route_check_times=0
+        self._safe_route_check_times=0
 
     def planning(self, animation=True, search_until_max_iter=True):
         """
@@ -101,15 +103,16 @@ class RRTStarReedsShepp(RRTStar):
             print('end point collision')
             return None
 
-        self.node_list = [self.start]
+        self.init_node_list = [self.start]
         for i in range(self.max_iter):
-            print("Iter:", i, ", number of nodes:", len(self.node_list))
+            print("Iter:", i, ", number of nodes:", len(self.init_node_list))
             rnd = self.get_random_node()
+            # print(rnd.x,rnd.y,rnd.yaw)
             # if i==100:
             #     rnd=copy.deepcopy(self.end)
 
-            nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
-            new_node = self.steer(self.node_list[nearest_ind], rnd)
+            nearest_ind = self.get_nearest_node_index(self.init_node_list, rnd)
+            new_node = self.steer(self.init_node_list[nearest_ind], rnd)
             if new_node==None:
                 # print("无法与附近的点相连 ",self.node_list[nearest_ind], rnd)
                 continue
@@ -121,10 +124,10 @@ class RRTStarReedsShepp(RRTStar):
 
                 if node_with_updated_parent:
                     self.rewire(node_with_updated_parent, near_indexes)
-                    self.node_list.append(node_with_updated_parent)
+                    self.init_node_list.append(node_with_updated_parent)
                     new_node=node_with_updated_parent
                 else:
-                    self.node_list.append(new_node)
+                    self.init_node_list.append(new_node)
 
 
                 # self.try_goal_path(new_node)
@@ -161,7 +164,7 @@ class RRTStarReedsShepp(RRTStar):
 
         if self.check_collision_node(
                 new_node):
-            self.node_list.append(new_node)
+            self.init_node_list.append(new_node)
 
     def draw_graph(self, rnd=None):
         plt.clf()
@@ -170,7 +173,7 @@ class RRTStarReedsShepp(RRTStar):
                 lambda event: [exit(0) if event.key == 'escape' else None])
         if rnd is not None:
             plt.plot(rnd.x, rnd.y, "^k")
-        for node in self.node_list:
+        for node in self.init_node_list:
             if node.parent:
                 plt.plot(node.path_x, node.path_y, "-g")
 
@@ -240,7 +243,7 @@ class RRTStarReedsShepp(RRTStar):
     def search_best_goal_node(self):
 
         goal_indexes = []
-        for (i, node) in enumerate(self.node_list):
+        for (i, node) in enumerate(self.init_node_list):
             if self.calc_dist_to_goal(node.x, node.y) <= self.goal_xy_th:
                 goal_indexes.append(i)
         # print("goal_indexes:", len(goal_indexes))
@@ -248,7 +251,7 @@ class RRTStarReedsShepp(RRTStar):
         # angle check
         final_goal_indexes = []
         for i in goal_indexes:
-            if abs(self.node_list[i].yaw - self.end.yaw) <= self.goal_yaw_th:
+            if abs(self.init_node_list[i].yaw - self.end.yaw) <= self.goal_yaw_th:
                 final_goal_indexes.append(i)
 
         # print("final_goal_indexes:", len(final_goal_indexes))
@@ -256,17 +259,17 @@ class RRTStarReedsShepp(RRTStar):
         if not final_goal_indexes:
             return None
 
-        min_cost = min([self.node_list[i].cost for i in final_goal_indexes])
+        min_cost = min([self.init_node_list[i].cost for i in final_goal_indexes])
         # print("min_cost:", min_cost)
         for i in final_goal_indexes:
-            if self.node_list[i].cost == min_cost:
+            if self.init_node_list[i].cost == min_cost:
                 return i
 
         return None
 
     def generate_final_course(self, goal_index):
         path = [[self.end.x, self.end.y, self.end.yaw]]
-        node = self.node_list[goal_index]
+        node = self.init_node_list[goal_index]
         while node.parent:
             for (ix, iy, iyaw) in zip(reversed(node.path_x), reversed(node.path_y), reversed(node.path_yaw)):
                 path.append([ix, iy, iyaw])

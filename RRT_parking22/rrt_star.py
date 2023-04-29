@@ -57,7 +57,7 @@ class RRTStar(RRT):
         self.connect_circle_dist = connect_circle_dist
         self.goal_node = self.Node(goal[0], goal[1])
         self.search_until_max_iter = search_until_max_iter
-        self.node_list = []
+        self.init_node_list = []
 
     def planning(self, animation=True):
         """
@@ -66,14 +66,14 @@ class RRTStar(RRT):
         animation: flag for animation on or off .
         """
 
-        self.node_list = [self.start]
+        self.init_node_list = [self.start]
         for i in range(self.max_iter):
-            print("Iter:", i, ", number of nodes:", len(self.node_list))
+            print("Iter:", i, ", number of nodes:", len(self.init_node_list))
             rnd = self.get_random_node()
-            nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
-            new_node = self.steer(self.node_list[nearest_ind], rnd,
+            nearest_ind = self.get_nearest_node_index(self.init_node_list, rnd)
+            new_node = self.steer(self.init_node_list[nearest_ind], rnd,
                                   self.expand_dis)
-            near_node = self.node_list[nearest_ind]
+            near_node = self.init_node_list[nearest_ind]
             new_node.cost = near_node.cost + \
                 math.hypot(new_node.x-near_node.x,
                            new_node.y-near_node.y)
@@ -85,9 +85,9 @@ class RRTStar(RRT):
                     new_node, near_inds)
                 if node_with_updated_parent:
                     self.rewire(node_with_updated_parent, near_inds)
-                    self.node_list.append(node_with_updated_parent)
+                    self.init_node_list.append(node_with_updated_parent)
                 else:
-                    self.node_list.append(new_node)
+                    self.init_node_list.append(new_node)
 
             if animation:
                 print('draw2 ', rnd.x, rnd.y)
@@ -135,7 +135,7 @@ class RRTStar(RRT):
         # search nearest cost in near_inds
         costs = []
         for i in near_inds:
-            near_node = self.node_list[i]
+            near_node = self.init_node_list[i]
             t_node = self.steer(near_node, new_node)
             # if t_node and self.check_collision(
             #         t_node, self.obstacle_list, self.robot_radius):
@@ -151,7 +151,7 @@ class RRTStar(RRT):
             return None
 
         min_ind = near_inds[costs.index(min_cost)]
-        new_node = self.steer(self.node_list[min_ind], new_node)
+        new_node = self.steer(self.init_node_list[min_ind], new_node)
         new_node.cost = min_cost
         if new_node.parent==None:
             return new_node
@@ -182,7 +182,7 @@ class RRTStar(RRT):
 
     def search_best_goal_node(self):
         dist_to_goal_list = [
-            self.calc_dist_to_goal(n.x, n.y) for n in self.node_list
+            self.calc_dist_to_goal(n.x, n.y) for n in self.init_node_list
         ]
         goal_inds = [
             dist_to_goal_list.index(i) for i in dist_to_goal_list
@@ -191,7 +191,7 @@ class RRTStar(RRT):
 
         safe_goal_inds = []
         for goal_ind in goal_inds:
-            t_node = self.steer(self.node_list[goal_ind], self.goal_node)
+            t_node = self.steer(self.init_node_list[goal_ind], self.goal_node)
             if self.check_collision_node(
                     t_node):
                 safe_goal_inds.append(goal_ind)
@@ -199,9 +199,9 @@ class RRTStar(RRT):
         if not safe_goal_inds:
             return None
 
-        min_cost = min([self.node_list[i].cost for i in safe_goal_inds])
+        min_cost = min([self.init_node_list[i].cost for i in safe_goal_inds])
         for i in safe_goal_inds:
-            if self.node_list[i].cost == min_cost:
+            if self.init_node_list[i].cost == min_cost:
                 return i
 
         return None
@@ -221,15 +221,15 @@ class RRTStar(RRT):
                     List with the indices of the nodes inside the ball of
                     radius r
         """
-        nnode = len(self.node_list) + 1
+        nnode = len(self.init_node_list) + 1
         r = self.connect_circle_dist * math.sqrt(math.log(nnode) / nnode)
         # if expand_dist exists, search vertices in a range no more than
         # expand_dist
         if hasattr(self, 'expand_dis'):
             r = min(r, self.expand_dis)
         r=r**2
-        dist_list = [(node.x - new_node.x)**2 + (node.y - new_node.y)**2
-                     for node in self.node_list]
+        dist_list = [(node.x - new_node.x) ** 2 + (node.y - new_node.y) ** 2
+                     for node in self.init_node_list]
         near_inds = [dist_list.index(i) for i in dist_list if i <= r]
         return near_inds
 
@@ -251,7 +251,7 @@ class RRTStar(RRT):
 
         """
         for i in near_inds:
-            near_node = self.node_list[i]
+            near_node = self.init_node_list[i]
             while near_node!=None:
                 edge_node = self.steer(new_node, near_node)
                 if not edge_node:
@@ -282,7 +282,7 @@ class RRTStar(RRT):
 
     def propagate_cost_to_leaves(self, parent_node):
 
-        for node in self.node_list:
+        for node in self.init_node_list:
             if node.parent == parent_node:
                 node.cost = self.calc_new_cost(parent_node, node)
                 self.propagate_cost_to_leaves(node)

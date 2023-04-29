@@ -84,13 +84,16 @@ class RRT:
         self.goal_sample_rate = goal_sample_rate
         self.max_iter = max_iter
         self.obstacle_list = obstacle_list
-        self.node_list = []
+        self.init_node_list = []
         self.robot_radius = robot_radius
         self.sim_env=sim_env
         self.grid=grid
 
         self._collision_check_times=0
         self._safe_collision_check_times=0
+        self._route_check_times=0
+        self._safe_route_check_times=0
+
 
     def planning(self, animation=False):
         """
@@ -99,31 +102,31 @@ class RRT:
         animation: flag for animation on or off
         """
 
-        self.node_list = [self.start]
+        self.init_node_list = [self.start]
         for i in range(self.max_iter):
             rnd_node = self.get_random_node()
-            nearest_ind = self.get_nearest_node_index(self.node_list, rnd_node)
-            nearest_node = self.node_list[nearest_ind]
+            nearest_ind = self.get_nearest_node_index(self.init_node_list, rnd_node)
+            nearest_node = self.init_node_list[nearest_ind]
 
             new_node = self.steer(nearest_node, rnd_node, self.expand_dis)
 
             if self.check_if_outside_play_area(new_node, self.play_area) and \
                self.check_collision_node(
                    new_node):
-                self.node_list.append(new_node)
+                self.init_node_list.append(new_node)
 
             if animation and i % 5 == 0:
                 print('draw1 ',rnd_node.x,rnd_node.y)
                 self.sim_env.world.point_plot((rnd_node.x,rnd_node.y))
                 self.sim_env.world.pause(0.00001)
 
-            if self.calc_dist_to_goal(self.node_list[-1].x,
-                                      self.node_list[-1].y) <= self.expand_dis:
-                final_node = self.steer(self.node_list[-1], self.end,
+            if self.calc_dist_to_goal(self.init_node_list[-1].x,
+                                      self.init_node_list[-1].y) <= self.expand_dis:
+                final_node = self.steer(self.init_node_list[-1], self.end,
                                         self.expand_dis)
                 if self.check_collision_node(
                         final_node):
-                    return self.generate_final_course(len(self.node_list) - 1)
+                    return self.generate_final_course(len(self.init_node_list) - 1)
 
             if animation and i % 5:
                 print('draw2 ',rnd_node.x,rnd_node.y)
@@ -164,7 +167,7 @@ class RRT:
 
     def generate_final_course(self, goal_ind):
         path = [[self.end.x, self.end.y]]
-        node = self.node_list[goal_ind]
+        node = self.init_node_list[goal_ind]
         while node.parent is not None:
             path.append([node.x, node.y])
             node = node.parent
@@ -196,7 +199,7 @@ class RRT:
             plt.plot(rnd.x, rnd.y, "^k")
             if self.robot_radius > 0.0:
                 self.plot_circle(rnd.x, rnd.y, self.robot_radius, '-r')
-        for node in self.node_list:
+        for node in self.init_node_list:
             if node.parent:
                 plt.plot(node.path_x, node.path_y, "-g")
 
@@ -326,6 +329,7 @@ class RRT:
     dichotomy：使用二分法碰撞检测
     '''
     def check_collision_pose_list(self,px,py,pyaw=None,order="default"):
+        self._route_check_times+=1
         if pyaw==None:
             pyaw=[]
             for i in range(len(px)):
@@ -347,6 +351,7 @@ class RRT:
             ans=self.check_collision_pose_list_hierarchical(px,py,pyaw)
         if ans ==True:
             self._safe_collision_check_times+=len(px)
+            self._safe_route_check_times+=1
         return ans
     def check_collision_pose_list_default(self,px,py,pyaw):
         for i in range(len(px)):
@@ -398,7 +403,7 @@ class RRT:
         return d, theta
 
     def get_collision_check_times(self):
-        return self._collision_check_times,self._safe_collision_check_times
+        return self._collision_check_times,self._safe_collision_check_times,self._route_check_times,self._safe_route_check_times
 
 
 def main(gx=6.0, gy=10.0):
