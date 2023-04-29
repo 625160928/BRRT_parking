@@ -49,6 +49,149 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
                          robot_radius=robot_radius, goal_sample_rate=goal_sample_rate,sim_env=sim_env, grid=grid,
                  path_collision_check_mode=path_collision_check_mode)
 
+    def rewire(self, new_node, near_inds,NodeLists):
+        """
+            For each node in near_inds, this will check if it is cheaper to
+            arrive to them from new_node.
+            In such a case, this will re-assign the parent of the nodes in
+            near_inds to new_node.
+            Parameters:
+            ----------
+                new_node, Node
+                    Node randomly added which can be joined to the tree
+
+                near_inds, list of uints
+                    A list of indices of the self.new_node which contains
+                    nodes within a circle of a given radius.
+            Remark: parent is designated in choose_parent.
+
+        """
+        for i in near_inds:
+            near_node = NodeLists[i]
+            while near_node!=None:
+                edge_node = self.steer(new_node, near_node)
+                if not edge_node:
+                    near_node=None
+                    continue
+                edge_node.cost = self.calc_new_cost(new_node, near_node)
+
+                no_collision = self.check_collision_node(
+                    edge_node)
+                improved_cost = near_node.cost > edge_node.cost
+
+                if no_collision and improved_cost:
+                    parent_node=near_node.parent
+                    near_node.x = edge_node.x
+                    near_node.y = edge_node.y
+                    near_node.cost = edge_node.cost
+                    near_node.path_x = edge_node.path_x
+                    near_node.path_y = edge_node.path_y
+                    near_node.parent = edge_node.parent
+                    self.propagate_cost_to_leaves(new_node)
+                    near_node=parent_node
+                else:
+                    near_node=None
+
+
+    def find_near_nodes(self, new_node,NodeLists):
+        """
+        1) defines a ball centered on new_node
+        2) Returns all nodes of the three that are inside this ball
+            Arguments:
+            ---------
+                new_node: Node
+                    new randomly generated node, without collisions between
+                    its nearest node
+            Returns:
+            -------
+                list
+                    List with the indices of the nodes inside the ball of
+                    radius r
+        """
+        nnode = len(NodeLists) + 1
+        r = self.connect_circle_dist * math.sqrt(math.log(nnode) / nnode)
+        # if expand_dist exists, search vertices in a range no more than
+        # expand_dist
+        if hasattr(self, 'expand_dis'):
+            r = min(r, self.expand_dis)
+        r=r**2
+        dist_list = [(node.x - new_node.x) ** 2 + (node.y - new_node.y) ** 2
+                     for node in NodeLists]
+        near_inds = [dist_list.index(i) for i in dist_list if i <= r]
+        return near_inds
+
+
+    def choose_parent(self, new_node, near_inds,NodeLists):
+        """
+        Computes the cheapest point to new_node contained in the list
+        near_inds and set such a node as the parent of new_node.
+            Arguments:
+            --------
+                new_node, Node
+                    randomly generated node with a path from its neared point
+                    There are not coalitions between this node and th tree.
+                near_inds: list
+                    Indices of indices of the nodes what are near to new_node
+
+            Returns.
+            ------
+                Node, a copy of new_node
+        """
+
+
+        if not near_inds:
+            new_node = self.get_best_father(new_node)
+            return new_node
+
+        # search nearest cost in near_inds
+        costs = []
+        for i in near_inds:
+            near_node = NodeLists[i]
+            t_node = self.steer(near_node, new_node)
+            # if t_node and self.check_collision(
+            #         t_node, self.obstacle_list, self.robot_radius):
+            if t_node and self.check_collision_node(
+                    t_node):
+                costs.append(self.calc_new_cost(near_node, new_node))
+            else:
+                costs.append(float("inf"))  # the cost of collision node
+        min_cost = min(costs)
+
+        if min_cost == float("inf"):
+            print("There is no good path.(min_cost is inf)")
+            return None
+
+        min_ind = near_inds[costs.index(min_cost)]
+        new_node = self.steer(NodeLists[min_ind], new_node)
+        new_node.cost = min_cost
+        if new_node.parent==None:
+            return new_node
+
+        # print('be ',new_node.parent.x,new_node.parent.y)
+
+        new_node=self.get_best_father(new_node)
+
+        return new_node
+
+    def update_node_into_tree(self,new_small_tree_node,small_tree):
+        near_indexes = self.find_near_nodes(new_small_tree_node,small_tree)
+
+        node_with_updated_parent = self.choose_parent(new_small_tree_node, near_indexes,small_tree)
+
+        if node_with_updated_parent:
+            self.rewire(node_with_updated_parent, near_indexes,small_tree)
+            small_tree.append(node_with_updated_parent)
+            new_small_tree_node=node_with_updated_parent
+        else:
+            small_tree.append(new_small_tree_node)
+    def generate_final_course_node(self, node):
+        path = [[self.end.x, self.end.y, self.end.yaw]]
+        while node.parent:
+            for (ix, iy, iyaw) in zip(reversed(node.path_x), reversed(node.path_y), reversed(node.path_yaw)):
+                path.append([ix, iy, iyaw])
+            node = node.parent
+        path.append([self.start.x, self.start.y, self.start.yaw])
+        return path
 
     def planning(self, animation=True, search_until_max_iter=True):
         """
@@ -66,53 +209,75 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
             return None
 
         self.init_node_list = [self.start]
-        for i in range(self.max_iter):
-            print("Iter:", i, ", number of nodes:", len(self.init_node_list))
-            rnd = self.get_random_node()
-            # print(rnd.x,rnd.y,rnd.yaw)
-            # if i==100:
-            #     rnd=copy.deepcopy(self.end)
+        self.end_node_list = [self.end]
 
-            nearest_ind = self.get_nearest_node_index(self.init_node_list, rnd)
-            new_node = self.steer(self.init_node_list[nearest_ind], rnd)
-            if new_node==None:
+
+
+        for i in range(self.max_iter):
+            if len(self.init_node_list)>len(self.end_node_list):
+                header='end'
+                large_tree=self.init_node_list
+                small_tree=self.end_node_list
+            else:
+                header='start'
+                small_tree=self.init_node_list
+                large_tree=self.end_node_list
+
+            print("Iter:", i, ", number of nodes:", len(self.init_node_list),len(self.end_node_list),header)
+
+            rnd = self.get_random_node(goal_rate=-1)
+
+            nearest_small_ind = self.get_nearest_node_index(small_tree, rnd)
+            new_small_tree_node = self.steer(small_tree[nearest_small_ind], rnd)
+            if new_small_tree_node==None:
                 # print("无法与附近的点相连 ",self.node_list[nearest_ind], rnd)
                 continue
             if self.check_collision_node(
-                    new_node):
-                near_indexes = self.find_near_nodes(new_node)
+                    new_small_tree_node):
+                self.update_node_into_tree(new_small_tree_node,small_tree)
 
-                node_with_updated_parent = self.choose_parent(new_node, near_indexes)
+                if animation and new_small_tree_node != None:  # and i % 5 == 0
 
-                if node_with_updated_parent:
-                    self.rewire(node_with_updated_parent, near_indexes)
-                    self.init_node_list.append(node_with_updated_parent)
-                    new_node=node_with_updated_parent
-                else:
-                    self.init_node_list.append(new_node)
+                    path_list = node_path_to_path_list(new_small_tree_node)
+                    self.sim_env.world.path_plot(path_list, path_color='black')
+                    self.sim_env.world.point_arrow_plot(node_to_point(new_small_tree_node), length=1)
+                    self.sim_env.world.pause(0.00001)
+
+                #brrt part
+
+                nearest_large_ind = self.get_nearest_node_index(large_tree, new_small_tree_node)
+                new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
 
 
-                # self.try_goal_path(new_node)
+                if new_large_tree_node == None:
+                    # print("无法与附近的点相连 ",self.node_list[nearest_ind], rnd)
+                    continue
 
-            if animation and new_node!=None: # and i % 5 == 0
+                if self.check_collision_node(
+                        new_large_tree_node):
+                    self.update_node_into_tree(new_large_tree_node,large_tree)
 
-                path_list=node_path_to_path_list(new_node)
-                self.sim_env.world.path_plot(path_list,path_color='black')
-                self.sim_env.world.point_arrow_plot(node_to_point(new_node),length=1)
-                self.sim_env.world.pause(0.00001)
+                    if animation and new_large_tree_node != None:  # and i % 5 == 0
 
-            if (not search_until_max_iter) and new_node:  # check reaching the goal
-                last_index = self.search_best_goal_node()
-                if last_index:
-                    return self.generate_final_course(last_index)
+                        path_list = node_path_to_path_list(new_large_tree_node)
+                        self.sim_env.world.path_plot(path_list, path_color='blue')
+                        self.sim_env.world.point_arrow_plot(node_to_point(new_small_tree_node), length=1)
+                        self.sim_env.world.pause(0.00001)
+
+                    if self.node_eq(new_large_tree_node,new_small_tree_node):
+                        if header=='end':
+                            path=self.generate_final_course_node(new_large_tree_node)+self.generate_final_course_node(new_small_tree_node).reverse()
+                        else:
+                            path=self.generate_final_course_node(new_small_tree_node)+self.generate_final_course_node(new_large_tree_node).reverse()
+                        return path
+
+
+
+
 
         print("reached max iteration")
 
-        last_index = self.search_best_goal_node()
-        if last_index:
-            return self.generate_final_course(last_index)
-        else:
-            print("Cannot find path")
+        print("Cannot find path")
 
         return None
 

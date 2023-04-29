@@ -88,6 +88,11 @@ class RRTStarReedsShepp(RRTStar):
         self._route_check_times=0
         self._safe_route_check_times=0
 
+    def node_eq(self,node1,node2):
+        if node1.x==node2.x and node1.y==node2.y and node1.yaw==node2.yaw:
+            return True
+        return False
+
     def planning(self, animation=True, search_until_max_iter=True):
         """
         planning
@@ -228,10 +233,12 @@ class RRTStarReedsShepp(RRTStar):
 
         return from_node.cost + sum([abs(l) for l in course_lengths])
 
-    def get_random_node(self):
+    def get_random_node(self,goal_rate=None):
 
+        if goal_rate==None:
+            goal_rate=self.goal_sample_rate
 
-        if random.randint(0, 100) > self.goal_sample_rate:
+        if random.randint(0, 100) > goal_rate:
             rnd = self.Node(random.uniform(self.min_rand, self.max_rand),
                             random.uniform(self.min_rand, self.max_rand),
                             random.uniform(-math.pi, math.pi)
