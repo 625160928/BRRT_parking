@@ -14,9 +14,7 @@ from rrt_star import RRTStar
 from rrt_star_reeds_shepp import RRTStarReedsShepp
 from brrt_star_reeds_shepp import BRRTStarReedsShepp
 
-# random.seed(4834201)  # map4
 # seed = random.randint(1, 10000000)
-
 seed=4979186
 # seed= 3847315 # parking
 
@@ -94,7 +92,7 @@ def main(show_animation=True):
         sim_env=env0,
         grid=grid,
         # path_collision_check_mode="dichotomy"
-        path_collision_check_mode="hierarchical"
+        # path_collision_check_mode="hierarchical"
     )
     rrt_star_reeds_shepp.curvature=1
 
