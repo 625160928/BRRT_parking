@@ -246,16 +246,22 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
     def get_random_node_end(self,goal_rate=None):
 
-        if goal_rate==None:
-            goal_rate=self.goal_sample_rate
+        oy = self.end.y
+        ox = self.end.x
+        oyaw=self.end.yaw
 
-        if random.randint(0, 100) > goal_rate:
-            rnd = self.Node(random.uniform(self.min_rand, self.max_rand),
-                            random.uniform(self.min_rand, self.max_rand),
-                            random.uniform(-math.pi, math.pi)
-                            )
-        else:  # goal point sampling
-            rnd = self.Node(self.end.x, self.end.y,self.end.yaw)
+        r = 5*random.uniform(0, 1)
+
+        theta =oyaw+  random.gauss(0,0.5)*math.pi/4
+
+        if random.randint(0, 1):
+            theta = theta+math.pi
+
+        x_rand = ox + r * math.cos(theta)
+        y_rand = oy + r * math.sin(theta)
+        yaw_rand=oyaw+math.pi/2*random.gauss(0,1)
+
+        rnd = self.Node(x_rand, y_rand, yaw_rand)
 
         return rnd
     def planning_small_large_once(self, small_tree, large_tree, header, animation=False):
@@ -266,6 +272,7 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         new_small_tree_node = self.steer(small_tree[nearest_small_ind], rnd)
         if new_small_tree_node == None:
             return None
+
         if self.check_collision_node(
                 new_small_tree_node):
             new_small_tree_node = self.update_node_into_tree(new_small_tree_node, small_tree)
