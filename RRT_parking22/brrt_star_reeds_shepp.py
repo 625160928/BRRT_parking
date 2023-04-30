@@ -173,25 +173,88 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
         return new_node
 
-    def update_node_into_tree(self,new_small_tree_node,small_tree):
-        near_indexes = self.find_near_nodes(new_small_tree_node,small_tree)
+    def update_node_into_tree(self, new_node, small_tree):
+        near_indexes = self.find_near_nodes(new_node, small_tree)
 
-        node_with_updated_parent = self.choose_parent(new_small_tree_node, near_indexes,small_tree)
+        node_with_updated_parent = self.choose_parent(new_node, near_indexes, small_tree)
 
         if node_with_updated_parent:
             self.rewire(node_with_updated_parent, near_indexes,small_tree)
             small_tree.append(node_with_updated_parent)
-            new_small_tree_node=node_with_updated_parent
+            new_node=node_with_updated_parent
         else:
-            small_tree.append(new_small_tree_node)
+            small_tree.append(new_node)
+        return new_node
+
     def generate_final_course_node(self, node):
-        path = [[self.end.x, self.end.y, self.end.yaw]]
+        path = []
+        # path = [[self.end.x, self.end.y, self.end.yaw]]
         while node.parent:
             for (ix, iy, iyaw) in zip(reversed(node.path_x), reversed(node.path_y), reversed(node.path_yaw)):
                 path.append([ix, iy, iyaw])
             node = node.parent
-        path.append([self.start.x, self.start.y, self.start.yaw])
+        # path.append([self.start.x, self.start.y, self.start.yaw])
         return path
+
+
+    def planning_small_large(self,small_tree,large_tree,header,animation=False):
+
+        rnd = self.get_random_node(goal_rate=-1)
+
+        nearest_small_ind = self.get_nearest_node_index(small_tree, rnd)
+        new_small_tree_node = self.steer(small_tree[nearest_small_ind], rnd)
+        if new_small_tree_node == None:
+            return None
+        if self.check_collision_node(
+                new_small_tree_node):
+            new_small_tree_node = self.update_node_into_tree(new_small_tree_node, small_tree)
+
+            if animation and new_small_tree_node != None:  # and i % 5 == 0
+
+                path_list = node_path_to_path_list(new_small_tree_node)
+                self.sim_env.world.path_plot(path_list, path_color='black')
+                self.sim_env.world.point_arrow_plot(node_to_point(new_small_tree_node), length=1)
+                self.sim_env.world.pause(0.00001)
+
+            # brrt part
+
+            nearest_large_ind = self.get_nearest_node_index(large_tree, new_small_tree_node)
+            new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
+
+            if new_large_tree_node == None:
+                # print("无法与附近的点相连 ",self.node_list[nearest_ind], rnd)
+                return None
+
+            if self.check_collision_node(
+                    new_large_tree_node):
+                new_large_tree_node = self.update_node_into_tree(new_large_tree_node, large_tree)
+
+                if animation and new_large_tree_node != None:  # and i % 5 == 0
+
+                    path_list = node_path_to_path_list(new_large_tree_node)
+                    self.sim_env.world.path_plot(path_list, path_color='blue')
+                    self.sim_env.world.point_arrow_plot(node_to_point(new_small_tree_node), length=1)
+                    self.sim_env.world.pause(0.00001)
+
+                if self.node_eq(new_large_tree_node, new_small_tree_node):
+                    for p in self.generate_final_course_node(new_large_tree_node):
+                        print(p)
+                    print()
+                    print('===============')
+                    for p in self.generate_final_course_node(new_small_tree_node):
+                        print(p)
+                    print(type(self.generate_final_course_node(new_large_tree_node)))
+                    if header == 'end':
+
+                        p1 =self.generate_final_course_node(new_large_tree_node)
+                        p1.reverse()
+                        path = p1+self.generate_final_course_node(new_small_tree_node)
+                    else:
+                        p1 = self.generate_final_course_node(new_small_tree_node)
+                        p1.reverse()
+                        path = p1+self.generate_final_course_node(new_large_tree_node)
+                    return path
+        return None
 
     def planning(self, animation=True, search_until_max_iter=True):
         """
@@ -214,63 +277,13 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
 
         for i in range(self.max_iter):
+            print("Iter:", i, ", number of nodes:", len(self.init_node_list),len(self.end_node_list))
             if len(self.init_node_list)>len(self.end_node_list):
-                header='end'
-                large_tree=self.init_node_list
-                small_tree=self.end_node_list
+                path=self.planning_small_large(self.end_node_list,self.init_node_list,'end',animation=animation)
             else:
-                header='start'
-                small_tree=self.init_node_list
-                large_tree=self.end_node_list
-
-            print("Iter:", i, ", number of nodes:", len(self.init_node_list),len(self.end_node_list),header)
-
-            rnd = self.get_random_node(goal_rate=-1)
-
-            nearest_small_ind = self.get_nearest_node_index(small_tree, rnd)
-            new_small_tree_node = self.steer(small_tree[nearest_small_ind], rnd)
-            if new_small_tree_node==None:
-                # print("无法与附近的点相连 ",self.node_list[nearest_ind], rnd)
-                continue
-            if self.check_collision_node(
-                    new_small_tree_node):
-                self.update_node_into_tree(new_small_tree_node,small_tree)
-
-                if animation and new_small_tree_node != None:  # and i % 5 == 0
-
-                    path_list = node_path_to_path_list(new_small_tree_node)
-                    self.sim_env.world.path_plot(path_list, path_color='black')
-                    self.sim_env.world.point_arrow_plot(node_to_point(new_small_tree_node), length=1)
-                    self.sim_env.world.pause(0.00001)
-
-                #brrt part
-
-                nearest_large_ind = self.get_nearest_node_index(large_tree, new_small_tree_node)
-                new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
-
-
-                if new_large_tree_node == None:
-                    # print("无法与附近的点相连 ",self.node_list[nearest_ind], rnd)
-                    continue
-
-                if self.check_collision_node(
-                        new_large_tree_node):
-                    self.update_node_into_tree(new_large_tree_node,large_tree)
-
-                    if animation and new_large_tree_node != None:  # and i % 5 == 0
-
-                        path_list = node_path_to_path_list(new_large_tree_node)
-                        self.sim_env.world.path_plot(path_list, path_color='blue')
-                        self.sim_env.world.point_arrow_plot(node_to_point(new_small_tree_node), length=1)
-                        self.sim_env.world.pause(0.00001)
-
-                    if self.node_eq(new_large_tree_node,new_small_tree_node):
-                        if header=='end':
-                            path=self.generate_final_course_node(new_large_tree_node)+self.generate_final_course_node(new_small_tree_node).reverse()
-                        else:
-                            path=self.generate_final_course_node(new_small_tree_node)+self.generate_final_course_node(new_large_tree_node).reverse()
-                        return path
-
+                path=self.planning_small_large(self.init_node_list,self.end_node_list,'start',animation=animation)
+            if path!=None:
+                return path
 
 
 
