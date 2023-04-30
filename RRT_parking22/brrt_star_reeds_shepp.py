@@ -197,9 +197,10 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         return path
 
     def get_random_node(self,goal_rate=None,type='default'):
+
         if type=='start':
-            # rnd = self.get_random_node_start(goal_rate)
-            rnd = self.get_random_node_default(goal_rate)
+            rnd = self.get_random_node_start(goal_rate)
+            # rnd = self.get_random_node_default(goal_rate)
         elif type=='end':
             rnd = self.get_random_node_end(goal_rate)
 
@@ -222,7 +223,7 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
         return rnd
 
-    def get_random_node_start(self,goal_rate=None):
+    def get_random_node_avoid(self,goal_rate=None):
         rw=3.65+0.2
         cr = rw / 3 / 2
         pd=random.randint(0,1)
@@ -244,6 +245,71 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
             yaw_rand = math.atan2( y_rand - oy,ox - x_rand) + math.pi
 
         # print(ox,oy,theta,r,'-----',x_rand,y_rand,yaw_rand)
+
+        rnd = self.Node(x_rand,y_rand,yaw_rand)
+
+        return rnd
+
+    def get_random_node_start(self,goal_rate=None):
+        oy=4.3
+        rw=3.65
+        is_up=random.randint(0,1)
+        oy+=is_up*rw
+        x_rand=random.uniform(self.min_rand, self.max_rand)
+        yaw_rand = random.uniform(-math.pi,math.pi)
+        r=abs(random.gauss(0, 0.3))
+
+        l,w,wl,_=self.sim_env.car.shape
+        # print(l,w,wl)
+
+        theta_head = math.atan2(w / 2, l / 2 + wl / 2)
+        theta_tail = math.atan2(w / 2, l / 2 - wl / 2)
+        wlh=l/2+wl/2
+        wlt=l/2-wl/2
+        lh=math.sqrt(wlh*wlh+w*w/4)
+        lt=math.sqrt(wlt*wlt+w*w/4)
+        # print(theta_head*180/math.pi,theta_tail*180/math.pi)
+        y_limit = 0
+        if yaw_rand==math.pi/2:
+            if is_up:
+                y_limit=wlh
+            else:
+                y_limit = wlt
+        elif yaw_rand==-math.pi/2:
+            if not is_up:
+                y_limit =wlh
+            else:
+                y_limit = wlt
+        else:
+            if is_up:
+                if yaw_rand > 0 and yaw_rand < math.pi:
+                    if yaw_rand < math.pi / 2:
+                        y_limit = wlh * math.sin(yaw_rand + theta_head)
+                    else:
+                        y_limit = wlh * math.sin(yaw_rand - theta_head)
+                else:
+                    if yaw_rand < -math.pi / 2:
+                        y_limit = wlt * abs(math.sin(yaw_rand + theta_tail))
+                    else:
+                        y_limit = wlt * abs(math.sin(yaw_rand - theta_tail))
+            else:
+                if not yaw_rand > 0 and yaw_rand < math.pi:
+                    if yaw_rand < -math.pi / 2:
+                        y_limit = wlh * math.sin(yaw_rand + theta_head)
+                    else:
+                        y_limit = wlh * math.sin(yaw_rand - theta_head)
+                else:
+                    if yaw_rand < math.pi / 2:
+                        y_limit = wlt * abs(math.sin(yaw_rand + theta_tail))
+                    else:
+                        y_limit = wlt * abs(math.sin(yaw_rand - theta_tail))
+            y_limit = abs(y_limit)  # +0.1
+
+        if is_up:
+            y_rand=oy-y_limit-r*0.5
+        else:
+            y_rand=oy+y_limit+r*0.5
+
 
         rnd = self.Node(x_rand,y_rand,yaw_rand)
 
