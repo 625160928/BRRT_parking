@@ -197,9 +197,70 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         return path
 
 
+    def get_random_node(self,goal_rate=None,type='default'):
+        if type=='start':
+            rnd = self.get_random_node_start(goal_rate)
+        elif type=='end':
+            rnd = self.get_random_node_end(goal_rate)
+
+        else:
+            rnd = self.get_random_node_default(goal_rate)
+        return rnd
+
+    def get_random_node_default(self, goal_rate=None):
+
+        if goal_rate == None:
+            goal_rate = self.goal_sample_rate
+
+        if random.randint(0, 100) > goal_rate:
+            rnd = self.Node(random.uniform(self.min_rand, self.max_rand),
+                            random.uniform(self.min_rand, self.max_rand),
+                            random.uniform(-math.pi, math.pi)
+                            )
+        else:  # goal point sampling
+            rnd = self.Node(self.end.x, self.end.y, self.end.yaw)
+
+        return rnd
+    def get_random_node_start(self,goal_rate=None):
+        rw=3.65
+        cr = rw / 5 / 2
+        pd=random.randint(0,1)
+        oy=pd*rw+4.3
+        ox=random.uniform(self.min_rand, self.max_rand)
+        r=random.gauss(4*cr,cr*cr)
+        theta=random.uniform(0, math.pi)
+        if pd:
+            theta=-theta
+        x_rand=ox+r*math.cos(theta)
+        y_rand=oy+r*math.sin(theta)
+        if random.randint(0, 1):
+            yaw_rand = math.atan2(ox - x_rand, y_rand - oy)
+        else:
+            yaw_rand = math.atan2(ox - x_rand, y_rand - oy) + math.pi
+
+        # print(ox,oy,theta,r,'-----',x_rand,y_rand,yaw_rand)
+
+        rnd = self.Node(x_rand,y_rand,yaw_rand)
+
+        return rnd
+
+    def get_random_node_end(self,goal_rate=None):
+
+        if goal_rate==None:
+            goal_rate=self.goal_sample_rate
+
+        if random.randint(0, 100) > goal_rate:
+            rnd = self.Node(random.uniform(self.min_rand, self.max_rand),
+                            random.uniform(self.min_rand, self.max_rand),
+                            random.uniform(-math.pi, math.pi)
+                            )
+        else:  # goal point sampling
+            rnd = self.Node(self.end.x, self.end.y,self.end.yaw)
+
+        return rnd
     def planning_small_large_once(self, small_tree, large_tree, header, animation=False):
 
-        rnd = self.get_random_node(goal_rate=-1)
+        rnd = self.get_random_node(goal_rate=-1,type=header)
 
         nearest_small_ind = self.get_nearest_node_index(small_tree, rnd)
         new_small_tree_node = self.steer(small_tree[nearest_small_ind], rnd)
@@ -232,7 +293,6 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
                 if animation and new_large_tree_node != None:  # and i % 5 == 0
 
                     path_list = node_path_to_path_list(new_large_tree_node)
-                    print()
                     self.sim_env.world.path_plot(path_list, path_color='blue')
                     self.sim_env.world.point_arrow_plot(node_to_point(new_small_tree_node), length=1)
                     self.sim_env.world.pause(0.00001)
