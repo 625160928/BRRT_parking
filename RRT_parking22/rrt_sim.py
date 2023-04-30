@@ -14,9 +14,10 @@ from rrt_star import RRTStar
 from rrt_star_reeds_shepp import RRTStarReedsShepp
 from brrt_star_reeds_shepp import BRRTStarReedsShepp
 
-seed = random.randint(1, 10000000)
+# seed = random.randint(1, 10000000)
 # seed=4979186  # init default
-# seed= 3847315 # parking
+seed= 3847315 # parking
+# seed=5886349 #有问题
 
 random.seed(seed)
 #32724
@@ -87,7 +88,7 @@ def main(show_animation=True):
         obstacle_list=obstacleList,
         rand_area=search_area,
         max_iter=5000,
-        connect_circle_dist=50.0,
+        connect_circle_dist=8.0,
         robot_radius=collision_r,
         sim_env=env0,
         grid=grid,

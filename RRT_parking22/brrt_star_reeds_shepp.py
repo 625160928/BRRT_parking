@@ -115,6 +115,7 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         if hasattr(self, 'expand_dis'):
             r = min(r, self.expand_dis)
         r=r**2
+        # print('dis ',math.sqrt(r))
         dist_list = [(node.x - new_node.x) ** 2 + (node.y - new_node.y) ** 2
                      for node in NodeLists]
         near_inds = [dist_list.index(i) for i in dist_list if i <= r]
@@ -140,6 +141,8 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
 
         if not near_inds:
+            if new_node.parent==None:
+                return None
             new_node = self.get_best_father(new_node)
             return new_node
 
@@ -158,7 +161,7 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         min_cost = min(costs)
 
         if min_cost == float("inf"):
-            print("There is no good path.(min_cost is inf)")
+            # print("There is no good path.(min_cost is inf)")
             return None
 
         min_ind = near_inds[costs.index(min_cost)]
@@ -342,8 +345,14 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
         nearest_small_ind = self.get_nearest_node_index(small_tree, rnd)
         new_small_tree_node = self.steer(small_tree[nearest_small_ind], rnd)
+
+        # near_indexes = self.find_near_nodes(rnd, small_tree)
+        # new_small_tree_node = self.choose_parent(rnd, near_indexes, small_tree)
+
         if new_small_tree_node == None:
             return None
+        if new_small_tree_node.parent==None:
+            return  None
 
         if self.check_collision_node(
                 new_small_tree_node):
@@ -358,12 +367,23 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
             # brrt part
 
-            nearest_large_ind = self.get_nearest_node_index(large_tree, new_small_tree_node)
-            new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
+            # nearest_large_ind = self.get_nearest_node_index(large_tree, new_small_tree_node)
+            # new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
+            new_large_tree_node = None
+            near_indexes = self.find_near_nodes(new_small_tree_node, large_tree)
+            for nearest_large_ind in near_indexes:
+                new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
+                if new_large_tree_node!=None:
+                    break
 
             if new_large_tree_node == None:
                 # print("无法与附近的点相连 ",self.node_list[nearest_ind], rnd)
                 return None
+
+            if new_large_tree_node.parent == None:
+                return None
+
+
 
             if self.check_collision_node(
                     new_large_tree_node):
