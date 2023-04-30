@@ -197,7 +197,7 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         return path
 
 
-    def planning_small_large(self,small_tree,large_tree,header,animation=False):
+    def planning_small_large_once(self, small_tree, large_tree, header, animation=False):
 
         rnd = self.get_random_node(goal_rate=-1)
 
@@ -232,18 +232,19 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
                 if animation and new_large_tree_node != None:  # and i % 5 == 0
 
                     path_list = node_path_to_path_list(new_large_tree_node)
+                    print()
                     self.sim_env.world.path_plot(path_list, path_color='blue')
                     self.sim_env.world.point_arrow_plot(node_to_point(new_small_tree_node), length=1)
                     self.sim_env.world.pause(0.00001)
 
                 if self.node_eq(new_large_tree_node, new_small_tree_node):
-                    for p in self.generate_final_course_node(new_large_tree_node):
-                        print(p)
-                    print()
-                    print('===============')
-                    for p in self.generate_final_course_node(new_small_tree_node):
-                        print(p)
-                    print(type(self.generate_final_course_node(new_large_tree_node)))
+                    # for p in self.generate_final_course_node(new_large_tree_node):
+                    #     print(p)
+                    # print()
+                    # print('===============')
+                    # for p in self.generate_final_course_node(new_small_tree_node):
+                    #     print(p)
+                    # print(type(self.generate_final_course_node(new_large_tree_node)))
                     if header == 'end':
 
                         p1 =self.generate_final_course_node(new_large_tree_node)
@@ -279,9 +280,9 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         for i in range(self.max_iter):
             print("Iter:", i, ", number of nodes:", len(self.init_node_list),len(self.end_node_list))
             if len(self.init_node_list)>len(self.end_node_list):
-                path=self.planning_small_large(self.end_node_list,self.init_node_list,'end',animation=animation)
+                path=self.planning_small_large_once(self.end_node_list, self.init_node_list, 'end', animation=animation)
             else:
-                path=self.planning_small_large(self.init_node_list,self.end_node_list,'start',animation=animation)
+                path=self.planning_small_large_once(self.init_node_list, self.end_node_list, 'start', animation=animation)
             if path!=None:
                 return path
 

@@ -15,10 +15,10 @@ from rrt_star_reeds_shepp import RRTStarReedsShepp
 from brrt_star_reeds_shepp import BRRTStarReedsShepp
 
 # random.seed(4834201)  # map4
-
-seed= 3847315 # parking
 # seed = random.randint(1, 10000000)
 
+seed=4979186
+# seed= 3847315 # parking
 
 random.seed(seed)
 #32724
@@ -96,28 +96,8 @@ def main(show_animation=True):
         # path_collision_check_mode="dichotomy"
         path_collision_check_mode="hierarchical"
     )
-    rrt_star_reeds_shepp.curvature=10
+    rrt_star_reeds_shepp.curvature=1
 
-    '''
-    default 
-    规划花费时间  5.0  s  265.58923721313477  ms
-    生成节点数量  22
-    碰撞检测次数  19600 16315  发现碰撞次数  3285
-    路径碰撞检测次数  292 214  路径发生碰撞次数  78  平均碰撞检测次数  42.11538461538461
-
-    
-    dichotomy
-    规划花费时间  4.0  s  562.075138092041  ms
-    生成节点数量  22
-    碰撞检测次数  17649 16315  发现碰撞次数  1334
-    路径碰撞检测次数  292 214  路径发生碰撞次数  78  平均碰撞检测次数  17.102564102564102
-
-    hierarchical
-    规划花费时间  4.0  s  516.4706707000732  ms
-    生成节点数量  22
-    碰撞检测次数  16816 16315  发现碰撞次数  501
-    路径碰撞检测次数  292 214  发现碰撞次数  78  平均碰撞检测次数  6.423076923076923
-    '''
 
     # show_animation =False
 
@@ -149,10 +129,10 @@ def main(show_animation=True):
         # RRT path to reformate
         path_list = path_rrt_to_astar(path_list)
 
-        # for path_point in  path_list:
-        #
-        #     is_save=rrt_star_reeds_shepp.check_collision_pose(path_point[0][0],path_point[1][0],path_point[2][0])
-        #     print(path_point[0][0],path_point[1][0],path_point[2][0],path_point[3][0],is_save)
+        for path_point in  path_list:
+            is_save=True
+            # is_save=rrt_star_reeds_shepp.check_collision_pose(path_point[0][0],path_point[1][0],path_point[2][0])
+            print(path_point[0][0],path_point[1][0],path_point[2][0],path_point[3][0],is_save)
 
         env0.world.path_plot(path_list, path_color='r', show_point=False)
         env0.render(0.1)

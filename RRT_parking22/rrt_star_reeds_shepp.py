@@ -89,9 +89,14 @@ class RRTStarReedsShepp(RRTStar):
         self._safe_route_check_times=0
 
     def node_eq(self,node1,node2):
-        if node1.x==node2.x and node1.y==node2.y and node1.yaw==node2.yaw:
-            return True
-        return False
+        # print(node1.x,node2.x,'----', node1.y,node2.y ,'----', node1.yaw,node2.yaw)
+        if abs(node1.x-node2.x)>0.01:
+            return False
+        if abs(node1.y-node2.y)>0.01:
+            return False
+        if abs(node1.yaw-node2.yaw)>0.01:
+            return False
+        return True
 
     def planning(self, animation=True, search_until_max_iter=True):
         """
