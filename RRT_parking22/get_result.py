@@ -66,6 +66,10 @@ def gen_anylize_once(path_collision_check_mode,star_tree_sample_method):
     start_time=time.time()
     path_list  = rrt_star_reeds_shepp.planning(animation=show_animation,search_until_max_iter=False,log=False)
 
+    len_path=-1
+    if path_list!=None:
+        len_path=len(path_list)
+
     end_time=time.time()
     tt=(end_time-start_time)*1000
     tms=(tt)%1000
@@ -104,56 +108,73 @@ def gen_anylize_once(path_collision_check_mode,star_tree_sample_method):
         # print('seed ', seed)
 
     return point_collision_times,safe_point_collision_times,route_collision_check_times,\
-           safe_route_collision_check_times,tt,len_node,run_times_iter,try_expand_init,try_expand_init_collision
+           safe_route_collision_check_times,tt,len_node,run_times_iter,try_expand_init,try_expand_init_collision,len_path
 
 def gen_anylize():
-    n=30
+    n=200
 
     random.seed(99)
+    start_time=time.time()
+    path_collision_check_mode_list=[]
+    path_collision_check_mode_list.append('default')
+    path_collision_check_mode_list.append("hierarchical")
+
+    star_tree_sample_method_list=[]
+    star_tree_sample_method_list.append('default')
+    # star_tree_sample_method_list.append('avoid')
+    star_tree_sample_method_list.append('limit')
+    star_tree_sample_method_list.append('rate_limit')
+
+    for path_collision_check_mode in path_collision_check_mode_list:
+        for star_tree_sample_method in star_tree_sample_method_list:
+            total_time=0
+            total_find_collision_path=0
+            total_find_collision_point=0
+            total_try_expand_init_point=0
+            total_final_expand_init_point=0
+            total_final_end_init_point=0
+            total_len=0
+            total_fail_count=0
+            total_try_expand_init_collision_point=0
+
+            for i in range(n):
+                point_collision_times,safe_point_collision_times,route_collision_check_times,\
+                safe_route_collision_check_times,tt,len_node,run_times_iter,try_expand_init,try_expand_init_collision,len_path\
+                    =gen_anylize_once( path_collision_check_mode,star_tree_sample_method)
+
+                total_time+=tt
+                total_find_collision_path+=route_collision_check_times - safe_route_collision_check_times
+                total_find_collision_point +=(point_collision_times - safe_point_collision_times)
+                total_try_expand_init_point+=try_expand_init
+                total_final_expand_init_point+=len_node[0]
+                total_final_end_init_point +=len_node[1]
+                total_try_expand_init_collision_point+=try_expand_init_collision
+                if len_path==-1:
+                    total_fail_count+=1
+                else:
+                    total_len+=len_path
 
 
-    # path_collision_check_mode='default'
-    path_collision_check_mode="hierarchical"
+            avg_time=total_time/n
 
-    star_tree_sample_method='default'
-    # star_tree_sample_method='avoid'
-    # star_tree_sample_method='limit'
-
-    # for star_tree_sample_method in ['default','avoid','limit']:
-    for star_tree_sample_method in ['limit']:
-        total_time=0
-        total_find_collision_path=0
-        total_find_collision_point=0
-        total_try_expand_init_point=0
-        total_final_expand_init_point=0
-        total_final_end_init_point=0
-        total_try_expand_init_collision_point=0
-
-        for i in range(n):
-            point_collision_times,safe_point_collision_times,route_collision_check_times,\
-            safe_route_collision_check_times,tt,len_node,run_times_iter,try_expand_init,try_expand_init_collision\
-                =gen_anylize_once( path_collision_check_mode,star_tree_sample_method)
-
-            total_time+=tt
-            total_find_collision_path+=route_collision_check_times - safe_route_collision_check_times
-            total_find_collision_point +=(point_collision_times - safe_point_collision_times)
-            total_try_expand_init_point+=try_expand_init
-            total_final_expand_init_point+=len_node[0]
-            total_final_end_init_point +=len_node[1]
-            total_try_expand_init_collision_point+=try_expand_init_collision
-
-
-        avg_time=total_time/n
-
-        avg_collision_path=total_find_collision_point/total_find_collision_path
-        print('-----------------------')
-        print('总运行次数 ',n,' 总时间 ',total_time)
-        print('平均运行时间',avg_time,'碰撞顺序算法是：',path_collision_check_mode,' 起点树采样算法 ',star_tree_sample_method)
-        print("路径碰撞检测次数 ",total_find_collision_point, ' 路径发生碰撞次数 ',total_find_collision_path
-             , ' 平均碰撞检测次数 ', avg_collision_path)
-        print('尝试拓展起点树次数 ',total_try_expand_init_point,total_final_expand_init_point,' 生成的起始点能加入树的概率 ',total_final_expand_init_point/total_try_expand_init_point
-              ,' 尝试拓展起始点安全概率 ',total_try_expand_init_collision_point/total_try_expand_init_point)
-        print("平均拓展节点数量 ",total_final_expand_init_point/n,total_final_end_init_point/n)
+            avg_collision_path=total_find_collision_point/total_find_collision_path
+            print('-----------------------')
+            print('总运行次数 ',n,' 总时间 ',total_time)
+            print('平均运行时间',avg_time,'碰撞顺序算法是：',path_collision_check_mode,' 起点树采样算法 ',star_tree_sample_method)
+            print("路径碰撞检测次数 ",total_find_collision_point, ' 路径发生碰撞次数 ',total_find_collision_path
+                 , ' 平均碰撞检测次数 ', avg_collision_path)
+            print('尝试拓展起点树次数 ',total_try_expand_init_point,total_final_expand_init_point,' 生成的起始点能加入树的概率 ',total_final_expand_init_point/total_try_expand_init_point
+                  ,' 尝试拓展起始点安全概率 ',total_try_expand_init_collision_point/total_try_expand_init_point)
+            print("平均拓展节点数量 ",total_final_expand_init_point/n,total_final_end_init_point/n)
+            print("规划失败率为",total_fail_count/n," 平均路径长度为 ",total_len/(n-total_fail_count))
+    print('==============================')
+    end_time=time.time()
+    tt=(end_time-start_time)*1000
+    tms=(tt)%1000
+    ts=(tt-tms)/1000
+    tmin=int((ts-ts%60)/60)
+    ts=ts%60
+    print("规划花费时间 ",tmin,' min ',ts,' s ',tms,' ms')
 
 
 if __name__ == '__main__':

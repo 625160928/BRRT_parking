@@ -215,7 +215,7 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
                 rnd = self.get_random_node_avoid(goal_rate)
 
             elif self.star_tree_sample_method == "rate_limit":
-                if random.randint(0,10)<=2:
+                if random.randint(0,10)<=1:
                     rnd = self.get_random_node_limit(goal_rate)
                 else:
                     rnd = self.get_random_node_default(goal_rate)
@@ -238,8 +238,12 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
             goal_rate = self.goal_sample_rate
 
         if random.randint(0, 100) > goal_rate:
+            # rnd = self.Node(random.uniform(self.min_rand, self.max_rand),
+            #                 random.uniform(self.min_rand, self.max_rand),
+            #                 random.uniform(-math.pi, math.pi)
+            #                 )
             rnd = self.Node(random.uniform(self.min_rand, self.max_rand),
-                            random.uniform(self.min_rand, self.max_rand),
+                            random.uniform(4.3,4.3+3.65),
                             random.uniform(-math.pi, math.pi)
                             )
         else:  # goal point sampling
@@ -281,7 +285,8 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         oy+=is_up*rw
         x_rand=random.uniform(self.min_rand, self.max_rand)
         yaw_rand = random.uniform(-math.pi,math.pi)
-        r=abs(random.gauss(0, 0.3))
+        # r=abs(random.gauss(0, 0.3))
+        r=random.uniform(0,1)
 
         remain=0.4
         l,w,wl,_=self.sim_env.car.shape
