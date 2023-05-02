@@ -33,7 +33,8 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
                  goal_sample_rate=20,
                  sim_env=None,
                  grid=None,
-                 path_collision_check_mode='default'
+                 path_collision_check_mode='default',
+                 star_tree_sample_method='default'
                  ):
         """
         Setting Parameter
@@ -48,6 +49,11 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         super().__init__(start, goal, obstacle_list, rand_area, max_iter,connect_circle_dist,
                          robot_radius=robot_radius, goal_sample_rate=goal_sample_rate,sim_env=sim_env, grid=grid,
                  path_collision_check_mode=path_collision_check_mode)
+        self.star_tree_sample_method =star_tree_sample_method
+
+        self.run_times =-1
+        self.try_start_sample_times=0
+        self.try_start_sample_collision_times=0
 
     def rewire(self, new_node, near_inds,NodeLists):
         """
@@ -202,8 +208,23 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
     def get_random_node(self,goal_rate=None,type='default'):
 
         if type=='start':
-            rnd = self.get_random_node_start(goal_rate)
-            # rnd = self.get_random_node_default(goal_rate)
+            self.try_start_sample_times+=1
+            if self.star_tree_sample_method=="limit":
+                rnd = self.get_random_node_limit(goal_rate)
+            elif  self.star_tree_sample_method=="avoid":
+                rnd = self.get_random_node_avoid(goal_rate)
+
+            elif self.star_tree_sample_method == "rate_limit":
+                if random.randint(0,10)<=2:
+                    rnd = self.get_random_node_limit(goal_rate)
+                else:
+                    rnd = self.get_random_node_default(goal_rate)
+
+            else:
+                rnd = self.get_random_node_default(goal_rate)
+            if self.check_collision_node(rnd):
+                self.try_start_sample_collision_times +=1
+
         elif type=='end':
             rnd = self.get_random_node_end(goal_rate)
 
@@ -253,7 +274,7 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
         return rnd
 
-    def get_random_node_start(self,goal_rate=None):
+    def get_random_node_limit(self, goal_rate=None):
         oy=4.3
         rw=3.65
         is_up=random.randint(0,1)
@@ -262,6 +283,7 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
         yaw_rand = random.uniform(-math.pi,math.pi)
         r=abs(random.gauss(0, 0.3))
 
+        remain=0.4
         l,w,wl,_=self.sim_env.car.shape
         # print(l,w,wl)
 
@@ -309,9 +331,9 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
             y_limit = abs(y_limit)  # +0.1
 
         if is_up:
-            y_rand=oy-y_limit-r*0.5
+            y_rand=oy-y_limit-r*0.5-remain
         else:
-            y_rand=oy+y_limit+r*0.5
+            y_rand=oy+y_limit+r*0.5+remain
 
 
         rnd = self.Node(x_rand,y_rand,yaw_rand)
@@ -416,7 +438,7 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
                     return path
         return None
 
-    def planning(self, animation=True, search_until_max_iter=True):
+    def planning(self, animation=True, search_until_max_iter=True,log=True):
         """
         planning
 
@@ -437,20 +459,22 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
 
         for i in range(self.max_iter):
-            print("Iter:", i, ", number of nodes:", len(self.init_node_list),len(self.end_node_list))
+            if log:
+                print("Iter:", i, ", number of nodes:", len(self.init_node_list),len(self.end_node_list))
             if len(self.init_node_list)>len(self.end_node_list):
                 path=self.planning_small_large_once(self.end_node_list, self.init_node_list, 'end', animation=animation)
             else:
                 path=self.planning_small_large_once(self.init_node_list, self.end_node_list, 'start', animation=animation)
             if path!=None:
+                self.run_times=i
                 return path
 
 
 
 
-        print("reached max iteration")
+        # print("reached max iteration")
 
-        print("Cannot find path")
+        # print("Cannot find path")
 
         return None
 

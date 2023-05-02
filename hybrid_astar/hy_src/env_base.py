@@ -10,7 +10,7 @@ from math import pi
 
 class env_base:
 
-    def __init__(self, world_name = None, world_map=None):
+    def __init__(self, world_name = None, world_map=None,draw=True):
         
         if world_name != None:
             with open(world_name) as file:
@@ -50,7 +50,8 @@ class env_base:
         self.robot_list=[]
         self.obs_cir_list=[]
         self.car_list=[]
-
+        self.draw=draw
+        # if self.draw:
         # self.world = env_plot(self.width, self.height)
 
     def initialization(self, **kwargs):
@@ -87,8 +88,9 @@ class env_base:
         else:
             self.map_matrix = None
 
-        self.world = env_plot(self.width, self.height, robot_list=self.robot_list, obs_cir_list=self.obs_cir_list, car_list=self.car_list, map_matrix=self.map_matrix)
-        self.world.init_plot()
+        if self.draw:
+            self.world = env_plot(self.width, self.height, robot_list=self.robot_list, obs_cir_list=self.obs_cir_list, car_list=self.car_list, map_matrix=self.map_matrix)
+            self.world.init_plot()
 
     def cal_des_list(self):
         vel_list = list(map(lambda x: x.cal_des_vel() , self.robot_list))

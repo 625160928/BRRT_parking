@@ -52,16 +52,17 @@ def get_random_node_end(goal_rate=None):
         return x_rand, y_rand, yaw_rand
 
 
+
 def get_random_node_start(x,tmp):
     oy=4.3
     rw=3.65
     is_up=random.randint(0,1)
-    # is_up=0
+    is_up=0
     oy+=is_up*rw
     x_rand=random.uniform(0, 10)
     yaw_rand = random.uniform(-math.pi,math.pi)
-    # x_rand=x
-    # yaw_rand = tmp
+    x_rand=x
+    yaw_rand = tmp
 
     # yaw_rand=85.13108918363861/180*math.pi
 

@@ -16,10 +16,10 @@ from brrt_star_reeds_shepp import BRRTStarReedsShepp
 
 # seed = random.randint(1, 10000000)
 # seed=4979186  # init default
-seed= 3847315 # parking
+# seed= 3847315 # parking
 # seed=5886349 #有问题
 
-random.seed(seed)
+# random.seed(seed)
 #32724
 
 '''
