@@ -19,8 +19,14 @@ from rrt_sim import *
 def gen_anylize_once(path_collision_check_mode,star_tree_sample_method):
     show_animation = False
     cur_path = Path(__file__).parent
-    world_path = str(cur_path / 'parking.yaml')
-    world_map = str(cur_path / 'map_image' / 'map_parking.png')
+    # world_path = str(cur_path / 'parking.yaml')
+    # world_map = str(cur_path / 'map_image' / 'map_parking.png')
+    world_path = str(cur_path / 'hy_astar_world.yaml')
+    # reeds_lookup_path = str(cur_path / 'reeds_lookup.npy')
+    # world_map = str(cur_path / 'map_image' / 'map_parking.png')
+    # world_map = str(cur_path / 'map_image' / 'map2.png')
+    world_map = str(cur_path / 'map_image' / 'map_100_100_4.png')
+    # world_map = str(cur_path / 'map_image' / 'map_100_100_5.png')
 
     env0 = env_base(world_path, world_map,draw=show_animation)
     env0.initialization()
@@ -47,7 +53,7 @@ def gen_anylize_once(path_collision_check_mode,star_tree_sample_method):
         goal=end_position,
         obstacle_list=obstacleList,
         rand_area=search_area,
-        max_iter=5000,
+        max_iter=2000,
         connect_circle_dist=8.0,
         robot_radius=collision_r,
         sim_env=env0,
@@ -113,20 +119,23 @@ def gen_anylize_once(path_collision_check_mode,star_tree_sample_method):
 def gen_anylize():
     n=200
 
-    random.seed(99)
     start_time=time.time()
     path_collision_check_mode_list=[]
-    path_collision_check_mode_list.append('default')
+    # path_collision_check_mode_list.append('default')
     path_collision_check_mode_list.append("hierarchical")
 
     star_tree_sample_method_list=[]
-    star_tree_sample_method_list.append('default')
-    # star_tree_sample_method_list.append('avoid')
-    star_tree_sample_method_list.append('limit')
-    star_tree_sample_method_list.append('rate_limit')
+    # star_tree_sample_method_list.append('default')
+    star_tree_sample_method_list.append('avoid')
+    # star_tree_sample_method_list.append('limit')
+    # star_tree_sample_method_list.append('rate_limit')
+
+
 
     for path_collision_check_mode in path_collision_check_mode_list:
         for star_tree_sample_method in star_tree_sample_method_list:
+
+            random.seed(199)
             total_time=0
             total_find_collision_path=0
             total_find_collision_point=0
@@ -138,6 +147,7 @@ def gen_anylize():
             total_try_expand_init_collision_point=0
 
             for i in range(n):
+                print(i,path_collision_check_mode,star_tree_sample_method)
                 point_collision_times,safe_point_collision_times,route_collision_check_times,\
                 safe_route_collision_check_times,tt,len_node,run_times_iter,try_expand_init,try_expand_init_collision,len_path\
                     =gen_anylize_once( path_collision_check_mode,star_tree_sample_method)
@@ -166,7 +176,7 @@ def gen_anylize():
             print('尝试拓展起点树次数 ',total_try_expand_init_point,total_final_expand_init_point,' 生成的起始点能加入树的概率 ',total_final_expand_init_point/total_try_expand_init_point
                   ,' 尝试拓展起始点安全概率 ',total_try_expand_init_collision_point/total_try_expand_init_point)
             print("平均拓展节点数量 ",total_final_expand_init_point/n,total_final_end_init_point/n)
-            print("规划失败率为",total_fail_count/n," 平均路径长度为 ",total_len/(n-total_fail_count))
+            # print("规划失败率为",total_fail_count/n," 平均路径长度为 ",total_len/(n-total_fail_count))
     print('==============================')
     end_time=time.time()
     tt=(end_time-start_time)*1000

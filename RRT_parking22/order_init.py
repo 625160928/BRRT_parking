@@ -1,4 +1,23 @@
+def main2():
+    N=100
+    orders=[]
+    order_list=[[0,1]]
+    point_header=0
+    point_tail=1
+    while point_header<point_tail:
+        head=order_list[point_header][0]
+        tail=order_list[point_header][1]
+        half=(head+tail)/2
+        orders.append(half)
+        if len(orders)>N:
+            return orders
 
+        order_list.append([head,half])
+        order_list.append([half,tail])
+        point_tail+=2
+
+        point_header+=1
+    return orders
 
 def main():
     rem=1/2000
@@ -19,6 +38,7 @@ def main():
             tail+=2
 
         header+=1
+    return orders
     print(orders)
     print(len(orders))
 if __name__ == '__main__':

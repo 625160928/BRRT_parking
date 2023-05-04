@@ -394,14 +394,14 @@ class BRRTStarReedsShepp(RRTStarReedsShepp):
 
             # brrt part
 
-            # nearest_large_ind = self.get_nearest_node_index(large_tree, new_small_tree_node)
-            # new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
-            new_large_tree_node = None
-            near_indexes = self.find_near_nodes(new_small_tree_node, large_tree)
-            for nearest_large_ind in near_indexes:
-                new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
-                if new_large_tree_node!=None:
-                    break
+            nearest_large_ind = self.get_nearest_node_index(large_tree, new_small_tree_node)
+            new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
+            # new_large_tree_node = None
+            # near_indexes = self.find_near_nodes(new_small_tree_node, large_tree)
+            # for nearest_large_ind in near_indexes:
+            #     new_large_tree_node = self.steer(large_tree[nearest_large_ind], new_small_tree_node)
+            #     if new_large_tree_node!=None:
+            #         break
 
             if new_large_tree_node == None:
                 # print("无法与附近的点相连 ",self.node_list[nearest_ind], rnd)
