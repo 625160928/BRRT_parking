@@ -64,10 +64,10 @@ def main(show_animation=True):
     # world_map = str(cur_path / 'map_image' / 'map_100_100_5.png')
 
     #起点树采样方法
-    # star_tree_sample_method='default'
+    star_tree_sample_method='default'
     # star_tree_sample_method='avoid'
     # star_tree_sample_method='limit'
-    star_tree_sample_method='rate_limit'
+    # star_tree_sample_method='rate_limit'
 
 
     env0 = env_base(world_path, world_map,draw=show_animation)
