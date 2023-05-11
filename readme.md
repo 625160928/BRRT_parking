@@ -1,9 +1,16 @@
 # 基于Bi-RRT*的泊车采样优化
 
+作者：孙耀威 
+
+来自南科大，该项目为信息技术基础课程的期末project，刚好在github上维护代码。
+课程结束后发现我之前选择的是public而不是private，那就干脆补一份readme看看能不能钓上几个需要这个代码的人咯~
+
 ## 前言
 本代码是基于python robotic的rrt代码的基础上一路改过来的
 
 还有，python robotic的rrt*+reed shepp代码bug一堆
+
+
 
 rrt代码层级关系 RRT-》RRT*-》RRT*+reed shepp-》BRRT*+reed shepp(我的)
 
